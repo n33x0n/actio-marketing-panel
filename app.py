@@ -625,7 +625,12 @@ async def _llm_chat(user_msg: str) -> str:
                     "HTTP-Referer": "https://actio.pl",
                     "X-Title": "Actio Marketing CMO-layer",
                 },
-                json={"model": CHAT_MODEL, "messages": messages, "tools": TOOLS_SCHEMA},
+                json={
+                    "model": CHAT_MODEL,
+                    "messages": messages,
+                    "tools": TOOLS_SCHEMA,
+                    "provider": {"data_collection": "deny"},
+                },
             )
             resp.raise_for_status()
             data = resp.json()

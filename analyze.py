@@ -239,6 +239,7 @@ def call_openrouter(prompt: str) -> str:
         json={
             "model": _env("OPENROUTER_MODEL", "anthropic/claude-opus-4.7"),
             "messages": [{"role": "user", "content": prompt}],
+            "provider": {"data_collection": "deny"},
         },
         timeout=180.0,
     )
