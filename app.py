@@ -33,6 +33,7 @@ import db
 
 DB_PATH = os.environ.get("DB_PATH", "marketing_data.db")
 MD_REPORTS_DIR = os.environ.get("MD_REPORTS_DIR", "./md-reports")
+MD_FULL_DIR = os.environ.get("MD_FULL_DIR", "./md-full")
 OPENROUTER_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 CHAT_MODEL = os.environ.get("CHAINLIT_CHAT_MODEL", "anthropic/claude-sonnet-4.6")
 
@@ -226,66 +227,15 @@ async def act_resolve_alert(action):
     await _render_alerts_feed()
 
 
-def _panel_view(report_md: str) -> str:
-    """Filtr raportu dla panelu: usuwa sekcję Rekomendacje + zostawia tylko pozytywne (🟢) anomalie.
-
-    Pełny raport (z 🔴 i Rekomendacjami) trafia tylko do email CMO i pliku na dysku.
-    """
-    # 1. Strip "## Rekomendacje" do końca pliku
-    md = re.sub(r"\n+##\s*Rekomendacje.*", "", report_md, flags=re.DOTALL).rstrip() + "\n"
-
-    # 2. Wewnątrz sekcji "## Anomalie": zostaw tylko bullety z 🟢
-    lines = md.splitlines()
-    out: list[str] = []
-    in_anomalies = False
-    has_anomalies_section = False
-    kept_positive = 0
-    note_inserted = False
-    for line in lines:
-        stripped = line.strip()
-        if stripped.startswith("##"):
-            in_anomalies = stripped.lower().startswith("## anomalie")
-            if in_anomalies:
-                has_anomalies_section = True
-                note_inserted = False
-            out.append(line)
-            continue
-        if in_anomalies and re.match(r"^\s*[-*]\s+", line):
-            content = re.sub(r"^\s*[-*]\s+", "", line)
-            if content.lstrip().startswith("🟢"):
-                out.append(line)
-                kept_positive += 1
-            # 🔴 lub bez emoji — pomijamy
-            continue
-        out.append(line)
-
-    result = "\n".join(out)
-    if has_anomalies_section and kept_positive == 0:
-        result = re.sub(
-            r"(##\s*Anomalie[^\n]*)(\n|$)",
-            r"\1\n\n_Brak pozytywnych anomalii w tym okresie._\n",
-            result,
-            count=1,
-        )
-    return result
-
-
 @cl.action_callback("view_report")
 async def act_view_report(action):
+    """Wyświetla raport z MD_REPORTS_DIR (już zapisany jako panel version przez analyze.py)."""
     filename = action.payload.get("file", "")
     path = pathlib.Path(MD_REPORTS_DIR) / filename
     if not path.exists():
         await cl.Message(content=f"❌ Brak pliku `{filename}`").send()
     else:
-        full = path.read_text(encoding="utf-8")
-        panel_md = _panel_view(full)
-        await cl.Message(
-            content=(
-                f"_Wersja panelu — bez sekcji Rekomendacje, tylko pozytywne anomalie. "
-                f"Pełen raport (z negatywami i rekomendacjami) jest w mailu._\n\n---\n\n"
-                f"{panel_md}"
-            ),
-        ).send()
+        await cl.Message(content=path.read_text(encoding="utf-8")).send()
         # Eksport PDF dla tego raportu
         await cl.Message(
             content=f"_Eksport pliku `{filename}`:_",
@@ -299,6 +249,7 @@ async def act_view_report(action):
 
 @cl.action_callback("export_report_pdf")
 async def act_export_report_pdf(action):
+    """PDF eksport używa panel version (md-reports). Pełna wersja jest w mailu."""
     filename = action.payload.get("file", "")
     path = pathlib.Path(MD_REPORTS_DIR) / filename
     if not path.exists():

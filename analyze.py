@@ -6,6 +6,7 @@ import datetime
 import json
 import os
 import pathlib
+import re
 import subprocess
 import urllib.parse
 
@@ -259,13 +260,67 @@ def _build_report_content(date_iso: str, report_md: str, sync_status: dict) -> s
     )
 
 
+def panel_view(report_md: str) -> str:
+    """Filtr raportu dla panelu: usuwa sekcję Rekomendacje + zostawia tylko pozytywne (🟢) anomalie.
+
+    Pełny raport (z 🔴 + Rekomendacjami) zostaje w MD_FULL_DIR i email do CMO.
+    Panel view trafia do MD_REPORTS_DIR i jest wyświetlany w Chainlit.
+    """
+    md = re.sub(r"\n+##\s*Rekomendacje.*", "", report_md, flags=re.DOTALL).rstrip() + "\n"
+
+    lines = md.splitlines()
+    out: list[str] = []
+    in_anomalies = False
+    has_anomalies_section = False
+    kept_positive = 0
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("##"):
+            in_anomalies = stripped.lower().startswith("## anomalie")
+            if in_anomalies:
+                has_anomalies_section = True
+            out.append(line)
+            continue
+        if in_anomalies and re.match(r"^\s*[-*]\s+", line):
+            content = re.sub(r"^\s*[-*]\s+", "", line)
+            if content.lstrip().startswith("🟢"):
+                out.append(line)
+                kept_positive += 1
+            continue
+        out.append(line)
+
+    result = "\n".join(out)
+    if has_anomalies_section and kept_positive == 0:
+        result = re.sub(
+            r"(##\s*Anomalie[^\n]*)(\n|$)",
+            r"\1\n\n_Brak pozytywnych anomalii w tym okresie._\n",
+            result,
+            count=1,
+        )
+    return result
+
+
 def save_to_md_reports(date_iso: str, report_md: str, sync_status: dict) -> str:
-    """Zapisuje raport do katalogu /md-reports/ (deployment server)."""
-    reports_dir = pathlib.Path(_env("MD_REPORTS_DIR"))
-    reports_dir.mkdir(parents=True, exist_ok=True)
-    path = reports_dir / f"{date_iso}-actio-marketing-report.md"
-    path.write_text(_build_report_content(date_iso, report_md, sync_status), encoding="utf-8")
-    return str(path)
+    """Zapisuje raport do dwóch katalogów:
+    - MD_FULL_DIR: pełny raport (z 🔴 i Rekomendacjami) — używane przez email + push
+    - MD_REPORTS_DIR: panel view (bez Rekomendacji, tylko 🟢 anomalie) — widoczny w Chainlit
+
+    Zwraca path do PEŁNEGO raportu (do linkowania w mailu).
+    """
+    full_content = _build_report_content(date_iso, report_md, sync_status)
+    panel_content = _build_report_content(date_iso, panel_view(report_md), sync_status)
+
+    full_dir = pathlib.Path(_env("MD_FULL_DIR", _env("MD_REPORTS_DIR") + "-full"))
+    full_dir.mkdir(parents=True, exist_ok=True)
+    full_path = full_dir / f"{date_iso}-actio-marketing-report.md"
+    full_path.write_text(full_content, encoding="utf-8")
+
+    panel_dir = pathlib.Path(_env("MD_REPORTS_DIR"))
+    panel_dir.mkdir(parents=True, exist_ok=True)
+    panel_path = panel_dir / f"{date_iso}-actio-marketing-report.md"
+    panel_path.write_text(panel_content, encoding="utf-8")
+
+    return str(full_path)
 
 
 def save_to_obsidian(date_iso: str, report_md: str, sync_status: dict) -> str:
