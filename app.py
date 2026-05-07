@@ -619,7 +619,12 @@ async def _llm_chat(user_msg: str) -> str:
         for _ in range(8):  # max 8 tool-call iterations
             resp = await client.post(
                 "https://openrouter.ai/api/v1/chat/completions",
-                headers={"Authorization": f"Bearer {OPENROUTER_KEY}"},
+                headers={
+                    "Authorization": f"Bearer {OPENROUTER_KEY}",
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": "https://actio.pl",
+                    "X-Title": "Actio Marketing CMO-layer",
+                },
                 json={"model": CHAT_MODEL, "messages": messages, "tools": TOOLS_SCHEMA},
             )
             resp.raise_for_status()
