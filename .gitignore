@@ -31,8 +31,9 @@ img/
 .vscode/
 .idea/
 
-# Chainlit runtime
-.chainlit/translations/
+# Chainlit runtime — ignoruj wszystkie translations EXCEPT custom pl-PL
+.chainlit/translations/*
+!.chainlit/translations/pl-PL.json
 .chainlit/.files/
 
 # Claude Code
