@@ -260,11 +260,10 @@ async def act_export_report_pdf(action):
             html = md_lib.markdown(path.read_text(encoding="utf-8"), extensions=["tables", "fenced_code"])
             full = f"<html><head><meta charset='utf-8'><style>body{{font-family:sans-serif;max-width:780px;margin:24px auto;padding:0 16px;}}table{{border-collapse:collapse;}}th,td{{border:1px solid #ddd;padding:4px 8px;}}</style></head><body>{html}</body></html>"
             pdf_bytes = HTML(string=full).write_pdf()
-            pdf_path = pathlib.Path("/tmp") / f"{filename.replace('.md', '.pdf')}"
-            pdf_path.write_bytes(pdf_bytes)
+            pdf_name = filename.replace(".md", ".pdf")
             await cl.Message(
-                content=f"✅ PDF gotowy: `{pdf_path.name}`",
-                elements=[cl.File(name=pdf_path.name, path=str(pdf_path), display="inline")],
+                content=f"✅ PDF gotowy: `{pdf_name}`",
+                elements=[cl.File(name=pdf_name, content=pdf_bytes, mime="application/pdf")],
             ).send()
         except ImportError:
             await cl.Message(content="❌ WeasyPrint nie zainstalowany. `uv add weasyprint`").send()
@@ -301,11 +300,10 @@ async def act_export_csv(action):
             await cl.Message(content="❌ Nieznana tabela").send()
             return
         df.to_csv(csv_buf, index=False)
-        csv_path = pathlib.Path("/tmp") / name
-        csv_path.write_text(csv_buf.getvalue(), encoding="utf-8")
+        csv_bytes = csv_buf.getvalue().encode("utf-8")
         await cl.Message(
             content=f"✅ CSV gotowy ({len(df)} wierszy)",
-            elements=[cl.File(name=name, path=str(csv_path), display="inline")],
+            elements=[cl.File(name=name, content=csv_bytes, mime="text/csv")],
         ).send()
     except Exception as e:
         await cl.Message(content=f"❌ Błąd: `{type(e).__name__}: {e}`").send()
