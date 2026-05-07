@@ -226,6 +226,50 @@ async def act_resolve_alert(action):
     await _render_alerts_feed()
 
 
+def _panel_view(report_md: str) -> str:
+    """Filtr raportu dla panelu: usuwa sekcję Rekomendacje + zostawia tylko pozytywne (🟢) anomalie.
+
+    Pełny raport (z 🔴 i Rekomendacjami) trafia tylko do email CMO i pliku na dysku.
+    """
+    # 1. Strip "## Rekomendacje" do końca pliku
+    md = re.sub(r"\n+##\s*Rekomendacje.*", "", report_md, flags=re.DOTALL).rstrip() + "\n"
+
+    # 2. Wewnątrz sekcji "## Anomalie": zostaw tylko bullety z 🟢
+    lines = md.splitlines()
+    out: list[str] = []
+    in_anomalies = False
+    has_anomalies_section = False
+    kept_positive = 0
+    note_inserted = False
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("##"):
+            in_anomalies = stripped.lower().startswith("## anomalie")
+            if in_anomalies:
+                has_anomalies_section = True
+                note_inserted = False
+            out.append(line)
+            continue
+        if in_anomalies and re.match(r"^\s*[-*]\s+", line):
+            content = re.sub(r"^\s*[-*]\s+", "", line)
+            if content.lstrip().startswith("🟢"):
+                out.append(line)
+                kept_positive += 1
+            # 🔴 lub bez emoji — pomijamy
+            continue
+        out.append(line)
+
+    result = "\n".join(out)
+    if has_anomalies_section and kept_positive == 0:
+        result = re.sub(
+            r"(##\s*Anomalie[^\n]*)(\n|$)",
+            r"\1\n\n_Brak pozytywnych anomalii w tym okresie._\n",
+            result,
+            count=1,
+        )
+    return result
+
+
 @cl.action_callback("view_report")
 async def act_view_report(action):
     filename = action.payload.get("file", "")
@@ -233,8 +277,15 @@ async def act_view_report(action):
     if not path.exists():
         await cl.Message(content=f"❌ Brak pliku `{filename}`").send()
     else:
-        content = path.read_text(encoding="utf-8")
-        await cl.Message(content=content).send()
+        full = path.read_text(encoding="utf-8")
+        panel_md = _panel_view(full)
+        await cl.Message(
+            content=(
+                f"_Wersja panelu — bez sekcji Rekomendacje, tylko pozytywne anomalie. "
+                f"Pełen raport (z negatywami i rekomendacjami) jest w mailu._\n\n---\n\n"
+                f"{panel_md}"
+            ),
+        ).send()
         # Eksport PDF dla tego raportu
         await cl.Message(
             content=f"_Eksport pliku `{filename}`:_",

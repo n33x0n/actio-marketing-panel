@@ -64,6 +64,14 @@ Mając poniższe dane, napisz **krótki raport po polsku** w formacie markdown z
 ## Anomalie
 Lista 0-5 punktów. Każdy punkt: co odbiega od normy + konkretne liczby. Tylko realne anomalie — jeśli nic się nie wyróżnia, napisz "brak istotnych anomalii".
 
+**WAŻNE — klasyfikacja każdej anomalii**:
+- **Zacznij każdy punkt od emoji** — 🟢 jeśli to anomalia pozytywna (wzrost, sukces, lepszy wynik niż norma, rekord) lub 🔴 jeśli negatywna (spadek, problem, gorszy wynik, zmarnowany budżet, wysokie CPA, niski QS).
+- Nie używaj innych emoji ani znaków zastępczych. Każdy bullet musi mieć dokładnie 🟢 lub 🔴 jako pierwszy znak po `-` lub `*`.
+
+Przykłady:
+- 🟢 BRAND `actio voip` PHRASE: 4 konwersje za 5.93 zł = CPA 1.48 zł — **rekord tygodnia**.
+- 🔴 SEARCH_VOIP_PL_ALL: 8 klików / 15.76 zł / 0 konwersji — pali budżet bez efektu.
+
 ## Rekomendacje
 Lista 1-5 konkretnych akcji do podjęcia DZIŚ. Każda akcja musi być jednoznaczna (np. "dodaj frazę X jako negative w kampanii Y", nie "rozważ optymalizację"). Priorytetyzuj wpływ na realne leady (`generate_lead` z Polski), nie fake metryki.
 
