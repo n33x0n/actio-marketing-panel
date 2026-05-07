@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+
+# Env / secrets
+.env
+.mcp.json
+
+# Service Account credentials
+.gcp/
+
+# SQLite
+*.db
+*.db-wal
+*.db-shm
+
+# Logs & runtime artifacts
+logs/
+md-reports/
+.files/
+
+# Brand assets (proprietary)
+img/
+
+# OS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Chainlit runtime
+.chainlit/translations/
+.chainlit/.files/
+
+# Claude Code
+.claude/

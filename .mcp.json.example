@@ -1,0 +1,25 @@
+{
+  "mcpServers": {
+    "actio-marketing": {
+      "command": "uv",
+      "args": ["run", "python", "mcp_server.py"],
+      "cwd": "/Users/Tomaleb/code/actio-marketing",
+      "env": {
+        "GA4_PROPERTY_ID": "<GA4_PROPERTY_ID>",
+        "GOOGLE_APPLICATION_CREDENTIALS": "/absolute/path/to/service-account.json",
+        "DB_PATH": "/absolute/path/to/marketing_data.db",
+        "GOOGLE_ADS_DEVELOPER_TOKEN": "<22-znakowy token z API Center>",
+        "GOOGLE_ADS_LOGIN_CUSTOMER_ID": "<MCC ID bez myślników, np. 9456427742>",
+        "GOOGLE_ADS_CUSTOMER_ID": "<Customer ID konta klienta bez myślników, np. 3239309785>",
+        "GOOGLE_ADS_OAUTH_CLIENT_ID": "<OAuth Client ID z GCP>",
+        "GOOGLE_ADS_OAUTH_CLIENT_SECRET": "<OAuth Client Secret z GCP>",
+        "GOOGLE_ADS_REFRESH_TOKEN": "<refresh token z OAuth flow>",
+        "GMAIL_USER": "<gmail-user@gmail.com>",
+        "GMAIL_APP_PASSWORD": "<16-znakowy App Password z Google>",
+        "GMAIL_FROM_NAME": "<Nazwa nadawcy, np. Actio Marketing Reports>",
+        "REPORT_RECIPIENTS_CMO": "<csv: cmo@x.com,team@x.com>",
+        "REPORT_RECIPIENTS_CEO": "<csv: ceo@x.com>"
+      }
+    }
+  }
+}
