@@ -14,8 +14,8 @@ resolution-markers = [
 ]
 
 [[package]]
-name = "actio-marketing"
-version = "0.1.0"
+name = "actio-marketing-panel"
+version = "1.0.0"
 source = { virtual = "." }
 dependencies = [
     { name = "chainlit" },

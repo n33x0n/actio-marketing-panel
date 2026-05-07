@@ -1,0 +1,17 @@
+[Unit]
+Description=Actio Marketing — Chainlit panel
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/actio-marketing-panel
+ExecStart=/root/.local/bin/uv run chainlit run app.py --port 44320 --host 0.0.0.0
+Restart=on-failure
+RestartSec=5
+StandardOutput=append:/opt/actio-marketing-panel/logs/chainlit.log
+StandardError=append:/opt/actio-marketing-panel/logs/chainlit.err.log
+
+[Install]
+WantedBy=multi-user.target

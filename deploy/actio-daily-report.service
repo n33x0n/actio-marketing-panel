@@ -1,0 +1,13 @@
+[Unit]
+Description=Actio Marketing — Daily Report (sync + LLM analyze + email + push + alerts)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/opt/actio-marketing-panel
+ExecStart=/root/.local/bin/uv run python -c "import analyze; r = analyze.generate_report(); print('saved:', r['vault_path'], 'alerts:', len(r['alerts']))"
+StandardOutput=append:/opt/actio-marketing-panel/logs/daily-report.log
+StandardError=append:/opt/actio-marketing-panel/logs/daily-report.err.log
+TimeoutStartSec=20m

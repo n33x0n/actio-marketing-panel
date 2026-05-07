@@ -237,11 +237,9 @@ def call_openrouter(prompt: str) -> str:
     return r.json()["choices"][0]["message"]["content"]
 
 
-def save_to_obsidian(date_iso: str, report_md: str, sync_status: dict) -> str:
-    reports_path = _env("OBSIDIAN_REPORTS_PATH", "projects/actio-marketing-reports")
-    path = f"{reports_path}/{date_iso}.md"
+def _build_report_content(date_iso: str, report_md: str, sync_status: dict) -> str:
     sync_lines = "\n".join(f"- **{k}**: {v}" for k, v in sync_status.items())
-    content = (
+    return (
         f"---\n"
         f"date: {date_iso}\n"
         f"type: marketing-report\n"
@@ -251,12 +249,35 @@ def save_to_obsidian(date_iso: str, report_md: str, sync_status: dict) -> str:
         f"## Sync status\n{sync_lines}\n\n"
         f"{report_md}\n"
     )
+
+
+def save_to_md_reports(date_iso: str, report_md: str, sync_status: dict) -> str:
+    """Zapisuje raport do katalogu /md-reports/ (deployment server)."""
+    reports_dir = pathlib.Path(_env("MD_REPORTS_DIR"))
+    reports_dir.mkdir(parents=True, exist_ok=True)
+    path = reports_dir / f"{date_iso}-actio-marketing-report.md"
+    path.write_text(_build_report_content(date_iso, report_md, sync_status), encoding="utf-8")
+    return str(path)
+
+
+def save_to_obsidian(date_iso: str, report_md: str, sync_status: dict) -> str:
+    """Zapisuje raport do Obsidian vault przez obsidian CLI (tryb lokalny)."""
+    reports_path = _env("OBSIDIAN_REPORTS_PATH", "projects/actio-marketing-reports")
+    path = f"{reports_path}/{date_iso}.md"
+    content = _build_report_content(date_iso, report_md, sync_status)
     subprocess.run(
         ["obsidian", "create", f"path={path}", f"content={content}"],
         check=True,
         capture_output=True,
     )
     return path
+
+
+def save_report(date_iso: str, report_md: str, sync_status: dict) -> str:
+    """Wybiera backend zapisu: jeśli MD_REPORTS_DIR ustawione → md-reports, inaczej Obsidian."""
+    if os.environ.get("MD_REPORTS_DIR"):
+        return save_to_md_reports(date_iso, report_md, sync_status)
+    return save_to_obsidian(date_iso, report_md, sync_status)
 
 
 def send_pushover(title: str, message: str, url: str | None = None) -> None:
@@ -303,12 +324,16 @@ def generate_report() -> dict:
     data = collect_data_summary()
     prompt = REPORT_PROMPT.format(**data)
     report_md = call_openrouter(prompt)
-    vault_path = save_to_obsidian(data["date"], report_md, sync_status)
-    obsidian_url = _build_obsidian_url(vault_path)
+    vault_path = save_report(data["date"], report_md, sync_status)
+    if os.environ.get("MD_REPORTS_DIR"):
+        base = os.environ.get("CHAINLIT_BASE_URL", "").rstrip("/")
+        report_url = f"{base}/raporty?file={pathlib.Path(vault_path).name}" if base else vault_path
+    else:
+        report_url = _build_obsidian_url(vault_path)
     send_pushover(
         title=f"Actio raport {data['date']}",
         message=_short_summary(report_md),
-        url=obsidian_url,
+        url=report_url,
     )
     triggered_alerts = alerts.check_thresholds(_env("DB_PATH"))
     email_result = email_sender.send_report_email(
@@ -316,13 +341,13 @@ def generate_report() -> dict:
         report_md=report_md,
         sync_status=sync_status,
         alerts=triggered_alerts,
-        obsidian_url=obsidian_url,
+        obsidian_url=report_url,
     )
     return {
         "date": data["date"],
         "report_md": report_md,
         "vault_path": vault_path,
-        "obsidian_url": obsidian_url,
+        "obsidian_url": report_url,
         "sync_status": sync_status,
         "alerts": triggered_alerts,
         "email": email_result,
