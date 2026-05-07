@@ -112,6 +112,18 @@ CREATE TABLE IF NOT EXISTS landing_conversions (
 
 CREATE INDEX IF NOT EXISTS idx_landing_conv_date ON landing_conversions(date);
 CREATE INDEX IF NOT EXISTS idx_landing_conv_landing ON landing_conversions(landing);
+
+CREATE TABLE IF NOT EXISTS alerts_log (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    triggered_at TEXT   NOT NULL DEFAULT (datetime('now')),
+    type        TEXT    NOT NULL,
+    campaign    TEXT,
+    message     TEXT    NOT NULL,
+    resolved    INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_alerts_log_time ON alerts_log(triggered_at);
+CREATE INDEX IF NOT EXISTS idx_alerts_log_resolved ON alerts_log(resolved);
 """
 
 # Kolumny dodawane via ALTER TABLE (jeśli istnieje stara wersja DB)
@@ -293,6 +305,35 @@ def upsert_landing_conversions(path: str, rows: list[dict]) -> int:
     with _connect(path) as conn:
         conn.executemany(sql, rows)
     return len(rows)
+
+
+def insert_alert(path: str, type_: str, message: str, campaign: str | None = None) -> int:
+    """Zapisuje alert do alerts_log. Zwraca ID alertu."""
+    with _connect(path) as conn:
+        cur = conn.execute(
+            "INSERT INTO alerts_log (type, campaign, message) VALUES (?, ?, ?)",
+            (type_, campaign, message),
+        )
+        return cur.lastrowid
+
+
+def fetch_recent_alerts(path: str, limit: int = 10, only_unresolved: bool = False) -> pd.DataFrame:
+    """Ostatnie alerty posortowane DESC po czasie."""
+    where = "WHERE resolved = 0" if only_unresolved else ""
+    sql = f"""
+        SELECT id, triggered_at, type, campaign, message, resolved
+        FROM alerts_log
+        {where}
+        ORDER BY triggered_at DESC
+        LIMIT ?
+    """
+    with _connect(path) as conn:
+        return pd.read_sql_query(sql, conn, params=[int(limit)])
+
+
+def resolve_alert(path: str, alert_id: int) -> None:
+    with _connect(path) as conn:
+        conn.execute("UPDATE alerts_log SET resolved = 1 WHERE id = ?", (alert_id,))
 
 
 def fetch_landing_conversions(path: str, days: int = 7, top: int = 30) -> pd.DataFrame:

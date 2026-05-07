@@ -68,6 +68,10 @@ def check_thresholds(db_path: str) -> list[dict]:
 
     for alert in triggered:
         _send_emergency(f"Actio Ads: {alert['type']}", alert["msg"])
+        try:
+            db.insert_alert(db_path, alert["type"], alert["msg"], alert.get("campaign"))
+        except Exception:
+            pass
 
     return triggered
 
