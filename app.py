@@ -98,20 +98,15 @@ async def on_chat_start():
     cl.user_session.set("days", DEFAULT_DAYS)
     _set_mode("menu")
 
-    # Settings (slider zakresu dni)
+    # Settings (slider zakresu dni 1-365)
     settings = await cl.ChatSettings([
-        cl.input_widget.Select(
-            id="days_preset",
-            label="Zakres dat (preset)",
-            values=[str(d) for d in DAYS_OPTIONS],
-            initial_index=DAYS_OPTIONS.index(DEFAULT_DAYS),
-        ),
-        cl.input_widget.NumericInput(
+        cl.input_widget.Slider(
             id="days_custom",
-            label="Lub wpisz dowolną liczbę dni",
+            label="Zakres dat (dni)",
             initial=DEFAULT_DAYS,
             min=1,
             max=365,
+            step=1,
         ),
     ]).send()
 
@@ -128,9 +123,7 @@ async def on_chat_start():
 
 @cl.on_settings_update
 async def on_settings_update(settings: dict):
-    custom = settings.get("days_custom")
-    preset = settings.get("days_preset")
-    days = int(custom) if custom else int(preset or DEFAULT_DAYS)
+    days = int(settings.get("days_custom") or DEFAULT_DAYS)
     days = max(1, min(365, days))
     cl.user_session.set("days", days)
     await cl.Message(content=f"Zakres ustawiony na **{days} dni**.").send()
