@@ -343,16 +343,16 @@ def save_report(date_iso: str, report_md: str, sync_status: dict) -> str:
     return save_to_obsidian(date_iso, report_md, sync_status)
 
 
-def send_pushover(title: str, message: str, url: str | None = None) -> None:
+def send_pushover(title: str, message: str, url: str | None = None, user_key: str | None = None) -> None:
     payload = {
         "token": _env("PUSHOVER_API_TOKEN"),
-        "user": _env("PUSHOVER_USER_KEY"),
+        "user": user_key or _env("PUSHOVER_USER_KEY"),
         "title": title,
         "message": message[:1024],
     }
     if url:
         payload["url"] = url
-        payload["url_title"] = "Otwórz w Obsidianie"
+        payload["url_title"] = "Otwórz panel"
     r = httpx.post("https://api.pushover.net/1/messages.json", data=payload, timeout=15.0)
     r.raise_for_status()
 
@@ -382,6 +382,30 @@ def _short_summary(report_md: str) -> str:
     return " ".join(digest)[:400] if digest else report_md[:400]
 
 
+def _panel_pushover_summary(report_md: str) -> str:
+    """Wersja push dla grupy panel (Hubert): Daily digest + 🟢 anomalie."""
+    panel_md = panel_view(report_md)
+    digest = _short_summary(panel_md)
+
+    # Wyciągnij 🟢 anomalie
+    positive: list[str] = []
+    in_anomalies = False
+    for line in panel_md.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("##"):
+            in_anomalies = stripped.lower().startswith("## anomalie")
+            continue
+        if in_anomalies and re.match(r"^\s*[-*]\s+", line):
+            content = re.sub(r"^\s*[-*]\s+", "", line).strip()
+            if content.startswith("🟢"):
+                positive.append("• " + content[1:].strip())  # bez emoji w push (oszczędność znaków)
+
+    out = digest
+    if positive:
+        out += "\n\n🟢 Pozytywy:\n" + "\n".join(positive[:3])
+    return out[:1024]
+
+
 def generate_report() -> dict:
     sync_status = run_all_syncs()
     data = collect_data_summary()
@@ -393,11 +417,28 @@ def generate_report() -> dict:
         report_url = f"{base}/raporty?file={pathlib.Path(vault_path).name}" if base else vault_path
     else:
         report_url = _build_obsidian_url(vault_path)
+    # Push #1 — Tomek (CMO): pełna wersja Daily digest
     send_pushover(
         title=f"Actio raport {data['date']}",
         message=_short_summary(report_md),
         url=report_url,
     )
+
+    # Push #2 — grupa PANEL (Hubert + ew. inni): wersja panel (Daily digest + 🟢 anomalie)
+    panel_keys = [k.strip() for k in os.environ.get("PUSHOVER_USER_KEY_PANEL", "").split(",") if k.strip()]
+    if panel_keys:
+        panel_summary = _panel_pushover_summary(report_md)
+        for uk in panel_keys:
+            try:
+                send_pushover(
+                    title=f"Actio raport {data['date']}",
+                    message=panel_summary,
+                    url=report_url,
+                    user_key=uk,
+                )
+            except Exception as e:
+                print(f"pushover panel error for {uk[:6]}...: {e}")
+
     triggered_alerts = alerts.check_thresholds(_env("DB_PATH"))
     email_result = email_sender.send_report_email(
         date_iso=data["date"],
