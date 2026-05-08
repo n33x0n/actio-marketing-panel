@@ -1,0 +1,11 @@
+[Unit]
+Description=Actio BRAND budget — weekend (60 zł)
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/opt/actio-marketing-panel
+ExecStart=/root/.local/bin/uv run python scripts/set_brand_budget.py 60
+StandardOutput=append:/opt/actio-marketing-panel/logs/brand-budget.log
+StandardError=append:/opt/actio-marketing-panel/logs/brand-budget.err.log
