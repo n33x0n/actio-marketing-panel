@@ -155,7 +155,8 @@ def send_report_email(date_iso: str, report_md: str, sync_status: dict,
 
     if ceo:
         try:
-            md_ceo = _strip_recommendations(report_md)
+            from analyze import panel_view
+            md_ceo = panel_view(report_md)
             html = _render_html(date_iso, md_ceo, sync_status, alerts, obsidian_url)
             plain = _render_plain(date_iso, md_ceo, sync_status, alerts, obsidian_url)
             _send_via_gmail(ceo, subject, html, plain)
