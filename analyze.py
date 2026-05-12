@@ -145,6 +145,12 @@ def run_all_syncs() -> dict[str, str]:
         results["ga4_landing"] = f"ERROR: {type(e).__name__}: {e}"
 
     try:
+        rows = ga4.fetch_lead_events_breakdown_last_7_days(ga4_property)
+        results["ga4_lead_events"] = f"OK ({db.upsert_lead_events(db_path, rows)} wierszy)"
+    except Exception as e:
+        results["ga4_lead_events"] = f"ERROR: {type(e).__name__}: {e}"
+
+    try:
         rows, sites = gsc.fetch_all_sites_last_7_days()
         results["gsc"] = f"OK ({db.upsert_gsc_rows(db_path, rows)} wierszy, {len(sites)} property)"
     except Exception as e:

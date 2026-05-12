@@ -64,6 +64,62 @@ def fetch_last_7_days(property_id: str) -> list[dict]:
     return rows
 
 
+def fetch_lead_events_breakdown_last_7_days(property_id: str) -> list[dict]:
+    """Breakdown eventów `generate_lead` po custom dimensions z GTM (lead_type,
+    form_id, form_location, phone_number, link_text, link_location) + source_medium.
+
+    Wymaga rejestracji 6 custom dimensions event-scoped w GA4 Admin. Custom dimensions
+    działają dopiero OD MOMENTU REJESTRACJI — starsze eventy nie mają tych wartości
+    (zostaną zwrócone jako "(not set)").
+    """
+    client = BetaAnalyticsDataClient()
+    request = RunReportRequest(
+        property=f"properties/{property_id}",
+        dimensions=[
+            Dimension(name="date"),
+            Dimension(name="customEvent:lead_type"),
+            Dimension(name="customEvent:form_id"),
+            Dimension(name="customEvent:form_location"),
+            Dimension(name="customEvent:phone_number"),
+            Dimension(name="customEvent:link_location"),
+            Dimension(name="sessionSourceMedium"),
+        ],
+        metrics=[Metric(name="eventCount")],
+        date_ranges=[DateRange(start_date="7daysAgo", end_date="yesterday")],
+        dimension_filter=FilterExpression(
+            and_group=FilterExpressionList(expressions=[
+                FilterExpression(filter=Filter(
+                    field_name="eventName",
+                    string_filter=Filter.StringFilter(value="generate_lead"),
+                )),
+                FilterExpression(not_expression=FilterExpression(
+                    or_group=FilterExpressionList(expressions=[
+                        FilterExpression(filter=Filter(
+                            field_name="country",
+                            string_filter=Filter.StringFilter(value=c),
+                        )) for c in EXCLUDED_COUNTRIES
+                    ]),
+                )),
+            ]),
+        ),
+    )
+    response = client.run_report(request)
+    rows: list[dict] = []
+    for row in response.rows:
+        rows.append({
+            "date": _iso_date(row.dimension_values[0].value),
+            "lead_type": row.dimension_values[1].value or "",
+            "form_id": row.dimension_values[2].value or "",
+            "form_location": row.dimension_values[3].value or "",
+            "phone_number": row.dimension_values[4].value or "",
+            "link_text": "",
+            "link_location": row.dimension_values[5].value or "",
+            "source_medium": row.dimension_values[6].value or "",
+            "event_count": int(row.metric_values[0].value or 0),
+        })
+    return rows
+
+
 def fetch_landing_conversions_last_7_days(property_id: str) -> list[dict]:
     """Liczba eventów `generate_lead` per (date, landingPage, sessionSourceMedium).
 

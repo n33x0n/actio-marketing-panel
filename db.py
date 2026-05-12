@@ -113,6 +113,23 @@ CREATE TABLE IF NOT EXISTS landing_conversions (
 CREATE INDEX IF NOT EXISTS idx_landing_conv_date ON landing_conversions(date);
 CREATE INDEX IF NOT EXISTS idx_landing_conv_landing ON landing_conversions(landing);
 
+CREATE TABLE IF NOT EXISTS lead_events_daily (
+    date          TEXT    NOT NULL,
+    lead_type     TEXT    NOT NULL DEFAULT '',
+    form_id       TEXT    NOT NULL DEFAULT '',
+    form_location TEXT    NOT NULL DEFAULT '',
+    phone_number  TEXT    NOT NULL DEFAULT '',
+    link_text     TEXT    NOT NULL DEFAULT '',
+    link_location TEXT    NOT NULL DEFAULT '',
+    source_medium TEXT    NOT NULL DEFAULT '',
+    event_count   INTEGER NOT NULL,
+    synced_at     TEXT    NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (date, lead_type, form_id, form_location, phone_number, link_text, link_location, source_medium)
+);
+
+CREATE INDEX IF NOT EXISTS idx_lead_events_date ON lead_events_daily(date);
+CREATE INDEX IF NOT EXISTS idx_lead_events_type ON lead_events_daily(lead_type);
+
 CREATE TABLE IF NOT EXISTS alerts_log (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     triggered_at TEXT   NOT NULL DEFAULT (datetime('now')),
@@ -305,6 +322,41 @@ def upsert_landing_conversions(path: str, rows: list[dict]) -> int:
     with _connect(path) as conn:
         conn.executemany(sql, rows)
     return len(rows)
+
+
+def upsert_lead_events(path: str, rows: list[dict]) -> int:
+    if not rows:
+        return 0
+    sql = """
+        INSERT INTO lead_events_daily
+            (date, lead_type, form_id, form_location, phone_number, link_text, link_location, source_medium, event_count, synced_at)
+        VALUES
+            (:date, :lead_type, :form_id, :form_location, :phone_number, :link_text, :link_location, :source_medium, :event_count, datetime('now'))
+        ON CONFLICT(date, lead_type, form_id, form_location, phone_number, link_text, link_location, source_medium) DO UPDATE SET
+            event_count = excluded.event_count,
+            synced_at   = excluded.synced_at
+    """
+    with _connect(path) as conn:
+        conn.executemany(sql, rows)
+    return len(rows)
+
+
+def fetch_lead_events_breakdown(path: str, days: int = 7, group_by: str = "lead_type") -> pd.DataFrame:
+    """Breakdown generate_lead per wybranym wymiarem (lead_type/form_id/phone_number/link_location/form_location)."""
+    allowed = {"lead_type", "form_id", "phone_number", "link_text", "link_location", "form_location", "source_medium"}
+    if group_by not in allowed:
+        group_by = "lead_type"
+    sql = f"""
+        SELECT {group_by},
+               SUM(event_count) AS leads,
+               COUNT(DISTINCT date) AS days_with_events
+        FROM lead_events_daily
+        WHERE date >= date('now', ?)
+        GROUP BY {group_by}
+        ORDER BY leads DESC
+    """
+    with _connect(path) as conn:
+        return pd.read_sql_query(sql, conn, params=[f"-{int(days)} days"])
 
 
 def insert_alert(path: str, type_: str, message: str, campaign: str | None = None) -> int:
