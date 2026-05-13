@@ -274,7 +274,6 @@ def render_md() -> str:
 
 - Konwersje GA4: event `generate_lead` (formularz CF7 lub klik tel:) – różni się od Google Ads attribution (Ads liczy klik-conversion 30d window, GA4 last-click sesji)
 - "Konwersje direct" to często **pokłosie reklam** – user widzi ad, googluje brand za 1-3 dni, wchodzi direct, konwertuje
-- Okresy nieequal: 22 vs 21 dni – różnica niewielka, % zmiany porównywalne
 
 """
     return md
