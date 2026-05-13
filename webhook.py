@@ -18,7 +18,7 @@ if _mcp.exists():
     except Exception:
         pass
 
-from fastapi import FastAPI, Form, HTTPException, Request
+from fastapi import BackgroundTasks, FastAPI, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
 
 import db
@@ -140,28 +140,36 @@ button:hover {{ background: #ca8a04; }}
 </body></html>""")
 
 
+def _bg_regenerate(draft_id: int, edit_notes: str) -> None:
+    """Background task — LLM regenerate + email. Może trwać 30-90s."""
+    try:
+        autopublish.regenerate_with_edits(draft_id, edit_notes)
+    except Exception as e:
+        db.update_draft(_db_path(), draft_id, error_log=f"bg regen: {type(e).__name__}: {e}")
+
+
 @app.post("/autopost/edit/{draft_id}", response_class=HTMLResponse)
-def edit_submit(draft_id: int, token: str, edit_notes: str = Form(...)):
+def edit_submit(draft_id: int, token: str, background_tasks: BackgroundTasks, edit_notes: str = Form(...)):
     draft = _verify(draft_id, token)
 
-    # Mark token used + parent status
+    # Mark token used + status
     db.update_draft(
         _db_path(), draft_id,
         token_used_at=datetime.datetime.utcnow().isoformat(),
         status="regenerating",
+        edit_notes=edit_notes,
     )
 
-    # Trigger regenerate (synchronicznie — może chwilę)
-    try:
-        result = autopublish.regenerate_with_edits(draft_id, edit_notes)
-        return _page(
-            "✏️ Regeneracja zlecona",
-            f'<p>Nowy draft #{result.get("draft_id")} przygotowany.</p>'
-            f'<p>Sprawdź skrzynkę email — nowy mail z poprawioną wersją.</p>',
-            color="#eab308"
-        )
-    except Exception as e:
-        return _page("❌ Błąd regeneracji", f'<p>{type(e).__name__}: {e}</p>', color="#ef4444")
+    # Queue background task — endpoint returns IMMEDIATELY
+    background_tasks.add_task(_bg_regenerate, draft_id, edit_notes)
+
+    return _page(
+        "✏️ Regeneracja zlecona",
+        f'<p>LLM generuje poprawioną wersję draftu #{draft_id}. Trwa to ~30-60 sekund.</p>'
+        f'<p>Nowy mail z poprawioną wersją pojawi się w Twojej skrzynce za chwilę.</p>'
+        f'<p style="margin-top:24px;font-size:13px;color:rgba(255,255,255,0.85)">Możesz zamknąć tę kartę.</p>',
+        color="#eab308"
+    )
 
 
 @app.get("/autopost/health")
