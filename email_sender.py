@@ -155,11 +155,9 @@ def send_report_email(date_iso: str, report_md: str, sync_status: dict,
 
     if ceo:
         try:
-            from analyze import panel_view
-            md_ceo = panel_view(report_md)
-            html = _render_html(date_iso, md_ceo, sync_status, alerts, obsidian_url)
-            plain = _render_plain(date_iso, md_ceo, sync_status, alerts, obsidian_url)
-            _send_via_gmail(ceo, subject, html, plain)
+            import panel_positive_report
+            pkg = panel_positive_report.generate(today_iso=date_iso)
+            _send_via_gmail(ceo, pkg["subject"], pkg["html"], pkg["plain"])
             result["ceo"]["sent_to"] = ceo
         except Exception as e:
             result["ceo"]["errors"].append(f"{type(e).__name__}: {e}")
