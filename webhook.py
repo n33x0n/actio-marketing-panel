@@ -10,6 +10,14 @@ import os
 import pathlib
 import secrets
 
+_mcp = pathlib.Path(__file__).parent / ".mcp.json"
+if _mcp.exists():
+    try:
+        for _k, _v in json.loads(_mcp.read_text())["mcpServers"]["actio-marketing"]["env"].items():
+            os.environ.setdefault(_k, _v)
+    except Exception:
+        pass
+
 from fastapi import FastAPI, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
 

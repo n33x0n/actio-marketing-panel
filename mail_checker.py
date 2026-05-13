@@ -13,6 +13,14 @@ import socket
 from email.header import decode_header
 from email.utils import parseaddr
 
+_mcp = pathlib.Path(__file__).parent / ".mcp.json"
+if _mcp.exists():
+    try:
+        for _k, _v in json.loads(_mcp.read_text())["mcpServers"]["actio-marketing"]["env"].items():
+            os.environ.setdefault(_k, _v)
+    except Exception:
+        pass
+
 import db
 import autopublish
 

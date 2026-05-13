@@ -2,12 +2,23 @@
 from __future__ import annotations
 
 import base64
+import json
 import os
+import pathlib
 from pathlib import Path
 import mimetypes
 
 import httpx
 import markdown as md_lib
+
+# Load env from .mcp.json if not already set (systemd uruchamia bez env)
+_mcp = pathlib.Path(__file__).parent / ".mcp.json"
+if _mcp.exists():
+    try:
+        for _k, _v in json.loads(_mcp.read_text())["mcpServers"]["actio-marketing"]["env"].items():
+            os.environ.setdefault(_k, _v)
+    except Exception:
+        pass
 
 
 def _auth() -> dict:

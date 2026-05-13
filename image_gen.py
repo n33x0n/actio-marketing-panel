@@ -1,11 +1,21 @@
-"""Image generation via OpenRouter (Nano Banana 2 / google/gemini-3-flash-image)."""
+"""Image generation via OpenRouter (Nano Banana 2)."""
 from __future__ import annotations
 
 import base64
+import json
 import os
+import pathlib
 from pathlib import Path
 
 import httpx
+
+_mcp = pathlib.Path(__file__).parent / ".mcp.json"
+if _mcp.exists():
+    try:
+        for _k, _v in json.loads(_mcp.read_text())["mcpServers"]["actio-marketing"]["env"].items():
+            os.environ.setdefault(_k, _v)
+    except Exception:
+        pass
 
 
 def generate_image(prompt: str, output_path: str) -> str:
