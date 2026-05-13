@@ -1,0 +1,13 @@
+[Unit]
+Description=Actio Autopost — Generate Draft (LLM + image + email)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/opt/actio-marketing-panel
+ExecStart=/root/.local/bin/uv run python -c "import autopublish; r = autopublish.generate_draft(); print('result:', r)"
+StandardOutput=append:/opt/actio-marketing-panel/logs/autopublish.log
+StandardError=append:/opt/actio-marketing-panel/logs/autopublish.err.log
+TimeoutStartSec=10m

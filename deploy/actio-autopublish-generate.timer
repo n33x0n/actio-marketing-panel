@@ -1,0 +1,9 @@
+[Unit]
+Description=Run Actio Autopost generator (wt + pt 9:00)
+
+[Timer]
+OnCalendar=Tue,Fri 09:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

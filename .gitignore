@@ -19,6 +19,9 @@ __pycache__/
 # Logs & runtime artifacts
 logs/
 md-reports/
+md-full/
+autopost_images/
+handoff/
 .files/
 
 # Brand assets (proprietary)

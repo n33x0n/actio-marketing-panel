@@ -130,6 +130,36 @@ CREATE TABLE IF NOT EXISTS lead_events_daily (
 CREATE INDEX IF NOT EXISTS idx_lead_events_date ON lead_events_daily(date);
 CREATE INDEX IF NOT EXISTS idx_lead_events_type ON lead_events_daily(lead_type);
 
+CREATE TABLE IF NOT EXISTS autopost_drafts (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    created_at      TEXT    NOT NULL DEFAULT (datetime('now')),
+    keyword         TEXT    NOT NULL,
+    gsc_position    REAL,
+    gsc_impressions INTEGER,
+    title           TEXT    NOT NULL,
+    slug            TEXT    NOT NULL,
+    content_md      TEXT    NOT NULL,
+    meta_description TEXT   NOT NULL,
+    categories      TEXT    NOT NULL DEFAULT '[]',
+    tags            TEXT    NOT NULL DEFAULT '[]',
+    image_path      TEXT,
+    image_prompt    TEXT,
+    approval_token  TEXT    NOT NULL UNIQUE,
+    token_used_at   TEXT,
+    parent_draft_id INTEGER,
+    edit_notes      TEXT,
+    status          TEXT    NOT NULL DEFAULT 'pending_approval',
+    approved_at     TEXT,
+    published_at    TEXT,
+    post_url        TEXT,
+    post_id         INTEGER,
+    error_log       TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_drafts_status ON autopost_drafts(status);
+CREATE INDEX IF NOT EXISTS idx_drafts_token ON autopost_drafts(approval_token);
+CREATE INDEX IF NOT EXISTS idx_drafts_created ON autopost_drafts(created_at);
+
 CREATE TABLE IF NOT EXISTS alerts_log (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     triggered_at TEXT   NOT NULL DEFAULT (datetime('now')),
@@ -339,6 +369,64 @@ def upsert_lead_events(path: str, rows: list[dict]) -> int:
     with _connect(path) as conn:
         conn.executemany(sql, rows)
     return len(rows)
+
+
+def insert_draft(path: str, draft: dict) -> int:
+    cols = ['keyword','gsc_position','gsc_impressions','title','slug','content_md',
+            'meta_description','categories','tags','image_path','image_prompt',
+            'approval_token','parent_draft_id','edit_notes']
+    placeholders = ','.join(f':{c}' for c in cols)
+    sql = f"INSERT INTO autopost_drafts ({','.join(cols)}) VALUES ({placeholders})"
+    row = {c: draft.get(c) for c in cols}
+    with _connect(path) as conn:
+        cur = conn.execute(sql, row)
+        return cur.lastrowid
+
+
+def fetch_draft(path: str, draft_id: int) -> dict | None:
+    with _connect(path) as conn:
+        conn.row_factory = sqlite3.Row
+        cur = conn.execute("SELECT * FROM autopost_drafts WHERE id = ?", (draft_id,))
+        r = cur.fetchone()
+        return dict(r) if r else None
+
+
+def fetch_draft_by_token(path: str, token: str) -> dict | None:
+    with _connect(path) as conn:
+        conn.row_factory = sqlite3.Row
+        cur = conn.execute("SELECT * FROM autopost_drafts WHERE approval_token = ?", (token,))
+        r = cur.fetchone()
+        return dict(r) if r else None
+
+
+def update_draft(path: str, draft_id: int, **fields) -> None:
+    if not fields:
+        return
+    set_clause = ', '.join(f"{k} = :{k}" for k in fields)
+    fields['_id'] = draft_id
+    sql = f"UPDATE autopost_drafts SET {set_clause} WHERE id = :_id"
+    with _connect(path) as conn:
+        conn.execute(sql, fields)
+
+
+def fetch_pending_drafts(path: str, limit: int = 50) -> list[dict]:
+    with _connect(path) as conn:
+        conn.row_factory = sqlite3.Row
+        cur = conn.execute(
+            "SELECT * FROM autopost_drafts WHERE status = 'pending_approval' AND token_used_at IS NULL ORDER BY created_at DESC LIMIT ?",
+            (limit,),
+        )
+        return [dict(r) for r in cur.fetchall()]
+
+
+def fetch_recent_published_keywords(path: str, days: int = 90) -> set[str]:
+    """Lista keyword z postów opublikowanych w ostatnich N dniach — żeby nie generować duplikatów."""
+    with _connect(path) as conn:
+        cur = conn.execute(
+            "SELECT keyword FROM autopost_drafts WHERE status = 'published' AND published_at >= datetime('now', ?)",
+            (f"-{int(days)} days",),
+        )
+        return {r[0] for r in cur.fetchall()}
 
 
 def fetch_lead_events_breakdown(path: str, days: int = 7, group_by: str = "lead_type") -> pd.DataFrame:

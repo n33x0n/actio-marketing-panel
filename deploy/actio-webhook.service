@@ -1,0 +1,17 @@
+[Unit]
+Description=Actio Autopost Webhook — FastAPI :44321
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/actio-marketing-panel
+ExecStart=/root/.local/bin/uv run uvicorn webhook:app --host 127.0.0.1 --port 44321
+Restart=on-failure
+RestartSec=5
+StandardOutput=append:/opt/actio-marketing-panel/logs/webhook.log
+StandardError=append:/opt/actio-marketing-panel/logs/webhook.err.log
+
+[Install]
+WantedBy=multi-user.target

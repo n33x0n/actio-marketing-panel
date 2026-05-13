@@ -1,0 +1,12 @@
+[Unit]
+Description=Actio Autopost — IMAP Checker (fallback approvals via email)
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/opt/actio-marketing-panel
+ExecStart=/root/.local/bin/uv run python -c "import autopublish; r = autopublish.process_imap_replies(); print('checked:', len(r))"
+StandardOutput=append:/opt/actio-marketing-panel/logs/autopublish-checker.log
+StandardError=append:/opt/actio-marketing-panel/logs/autopublish-checker.err.log
+TimeoutStartSec=5m
