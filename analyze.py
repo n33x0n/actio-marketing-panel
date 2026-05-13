@@ -89,6 +89,15 @@ DANE:
 ### GA4 — leady (`generate_lead`) per landing+source (7 dni)
 {ga4_leads_per_landing}
 
+### GA4 — lead_type breakdown (form vs phone, custom dims z GTM od 12.05)
+{lead_type_breakdown_7d}
+
+### GA4 — który formularz CF7 (2485=stary inline vs 123446=nowy modal global)
+{lead_form_id_breakdown_7d}
+
+### GA4 — który numer telefonu kliknięty
+{lead_phone_number_breakdown_7d}
+
 ### Google Ads — kampanie (ostatnie 7 dni, kolumny is_pct/lost_budget_pct/lost_rank_pct = Lost IS %)
 {ads_campaigns_7d}
 
@@ -191,6 +200,11 @@ def collect_data_summary() -> dict[str, str]:
     gsc_q = db.fetch_gsc_top_queries(db_path, days=7, top=10)
     gsc_p = db.fetch_gsc_top_pages(db_path, days=7, top=10)
 
+    # Lead type breakdown (form vs phone) — z GTM custom dimensions
+    lead_type_df = db.fetch_lead_events_breakdown(db_path, days=7, group_by="lead_type")
+    lead_form_id_df = db.fetch_lead_events_breakdown(db_path, days=7, group_by="form_id")
+    lead_phone_df = db.fetch_lead_events_breakdown(db_path, days=7, group_by="phone_number")
+
     # COMPETITOR — osobna sekcja
     competitor_camp_df = ads_df[ads_df["campaign_name"] == "SEARCH_COMPETITOR_PL"]
     all_kw = db.fetch_ads_keywords(db_path, days=7)
@@ -230,6 +244,9 @@ def collect_data_summary() -> dict[str, str]:
         "competitor_search_terms_7d": _md(competitor_terms_df),
         "gsc_queries_7d": _md(gsc_q),
         "gsc_pages_7d": _md(gsc_p),
+        "lead_type_breakdown_7d": _md(lead_type_df),
+        "lead_form_id_breakdown_7d": _md(lead_form_id_df),
+        "lead_phone_number_breakdown_7d": _md(lead_phone_df),
     }
 
 

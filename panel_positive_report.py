@@ -180,6 +180,53 @@ def top_pages_gsc(days: int = 30, limit: int = 5) -> list[dict]:
     return [dict(r) for r in rows]
 
 
+def lead_type_breakdown(days: int = 21) -> dict:
+    """Breakdown lead_type (form/phone) + per landing/phone. Conditional render."""
+    s = (TODAY - timedelta(days=days)).isoformat()
+    e = TODAY.isoformat()
+    totals = _q("""
+        SELECT lead_type, SUM(event_count) cnt
+        FROM lead_events_daily
+        WHERE date BETWEEN ? AND ? AND lead_type IN ('form', 'phone')
+        GROUP BY lead_type
+    """, (s, e))
+    by_type = {r["lead_type"]: int(r["cnt"]) for r in totals}
+    form_count = by_type.get("form", 0)
+    phone_count = by_type.get("phone", 0)
+    total = form_count + phone_count
+
+    # Skip section if too little data
+    if total < 5:
+        return {"show": False, "total": total}
+
+    # Per landing dla form
+    form_locations = _q("""
+        SELECT form_location, form_id, SUM(event_count) cnt
+        FROM lead_events_daily
+        WHERE date BETWEEN ? AND ? AND lead_type = 'form' AND form_location != '(not set)'
+        GROUP BY form_location, form_id
+        ORDER BY cnt DESC LIMIT 5
+    """, (s, e))
+
+    # Per phone number
+    phones = _q("""
+        SELECT phone_number, link_location, SUM(event_count) cnt
+        FROM lead_events_daily
+        WHERE date BETWEEN ? AND ? AND lead_type = 'phone' AND phone_number != '(not set)'
+        GROUP BY phone_number, link_location
+        ORDER BY cnt DESC LIMIT 5
+    """, (s, e))
+
+    return {
+        "show": True,
+        "form_count": form_count,
+        "phone_count": phone_count,
+        "total": total,
+        "form_locations": [dict(r) for r in form_locations],
+        "phones": [dict(r) for r in phones],
+    }
+
+
 def render_md() -> str:
     A = period_metrics(PERIOD_A_START, PERIOD_A_END)
     B = period_metrics(PERIOD_B_START, PERIOD_B_END)
@@ -241,6 +288,37 @@ def render_md() -> str:
             md += f"| {i} | `{k['keyword']}` | {k['match_type'][0]} | {k['campaign_name'].replace('SEARCH_', '')} | {fmt(k['clicks'])} | {fmt(k['cost'], 'money')} | {fmt(k['conv'], 'float')} | {fmt(cpa, 'money')} |\n"
     else:
         md += "| – | (brak konwersji w 30d) | | | | | | |\n"
+
+    # Lead type breakdown (conditional)
+    lb = lead_type_breakdown(21)
+    if lb["show"]:
+        form_pct = lb["form_count"] * 100 // lb["total"] if lb["total"] else 0
+        phone_pct = lb["phone_count"] * 100 // lb["total"] if lb["total"] else 0
+        md += f"""
+---
+
+## 📞 Z czego dzwonią, co wypełniają (ostatnie 21 dni)
+
+| Typ | Konwersje | % udziału |
+|---|---:|---:|
+| 📝 **Formularz CF7** | {lb['form_count']} | {form_pct}% |
+| 📞 **Klik na numer telefonu** | {lb['phone_count']} | {phone_pct}% |
+| **Razem** | **{lb['total']}** | 100% |
+
+"""
+        if lb["form_locations"]:
+            md += "**Top strony z których wysłano formularz**:\n\n"
+            md += "| Strona | Form ID | Konwersje |\n|---|---|---:|\n"
+            for f in lb["form_locations"]:
+                md += f"| `{f['form_location']}` | {f['form_id']} | {f['cnt']} |\n"
+        if lb["phones"]:
+            md += "\n**Top numery (kliki tel:)**:\n\n"
+            md += "| Numer | Z której strony | Kliki |\n|---|---|---:|\n"
+            for p in lb["phones"]:
+                num = p['phone_number']
+                if num and not num.startswith('+'):
+                    num = '+' + num
+                md += f"| `{num}` | `{p['link_location']}` | {p['cnt']} |\n"
 
     md += f"""
 ---
