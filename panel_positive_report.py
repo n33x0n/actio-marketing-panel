@@ -26,11 +26,20 @@ import email_sender
 DB_PATH = os.environ["DB_PATH"]
 TODAY = date.today()
 
-# Periods (Tom's spec): 1-22.04 vs 23.04-13.05 (oba 21-22 dni)
-PERIOD_A_START = date(2026, 4, 1)
-PERIOD_A_END = date(2026, 4, 22)
-PERIOD_B_START = date(2026, 4, 23)
-PERIOD_B_END = TODAY
+# Sliding window 21d vs 21d
+PERIOD_LENGTH = 21
+
+
+def _compute_periods(today: date) -> tuple[date, date, date, date]:
+    """Zwraca (A_start, A_end, B_start, B_end) — sliding 21d vs 21d wstecz od today."""
+    b_end = today
+    b_start = today - timedelta(days=PERIOD_LENGTH - 1)
+    a_end = b_start - timedelta(days=1)
+    a_start = a_end - timedelta(days=PERIOD_LENGTH - 1)
+    return a_start, a_end, b_start, b_end
+
+
+PERIOD_A_START, PERIOD_A_END, PERIOD_B_START, PERIOD_B_END = _compute_periods(TODAY)
 
 
 def _q(sql: str, params: tuple = ()) -> list[sqlite3.Row]:
@@ -185,15 +194,18 @@ def render_md() -> str:
             return f"{n:,.1f}".replace(",", " ").replace(".", ",")
         return f"{int(n):,}".replace(",", " ")
 
+    period_a_str = f"{PERIOD_A_START.strftime('%d.%m')}-{PERIOD_A_END.strftime('%d.%m')}"
+    period_b_str = f"{PERIOD_B_START.strftime('%d.%m')}-{PERIOD_B_END.strftime('%d.%m')}"
+
     md = f"""# 📈 Actio Marketing – Trendy i Wzrosty
 
-**Okres porównania**: 1-22.04 (22 dni) ▶️ 23.04-{TODAY.strftime('%d.%m')} ({(PERIOD_B_END - PERIOD_B_START).days + 1} dni)
+**Sliding window porównanie**: poprzednie {PERIOD_LENGTH} dni ({period_a_str}) ▶️ ostatnie {PERIOD_LENGTH} dni ({period_b_str})
 
 ---
 
 ## ⬆️ Kluczowe wzrosty (porównanie okresów)
 
-| Metryka | 1-22.04 | 23.04-dziś | Δ |
+| Metryka | {period_a_str} | {period_b_str} | Δ |
 |---|---:|---:|---:|
 | **Wyświetlenia Google Ads (paid)** | {fmt(A['ads_impressions'])} | {fmt(B['ads_impressions'])} | {pct_change(A['ads_impressions'], B['ads_impressions'])} |
 | **Kliki Google Ads** | {fmt(A['ads_clicks'])} | {fmt(B['ads_clicks'])} | {pct_change(A['ads_clicks'], B['ads_clicks'])} |
@@ -285,11 +297,11 @@ hr {{ border: 0; border-top: 1px solid #ddd; margin: 24px 0; }}
 
 
 def generate(today_iso: str | None = None) -> dict:
-    """Public entry — zwraca {subject, plain, html} dla danego dnia."""
-    global TODAY, PERIOD_B_END
+    """Public entry – zwraca {subject, plain, html} dla danego dnia."""
+    global TODAY, PERIOD_A_START, PERIOD_A_END, PERIOD_B_START, PERIOD_B_END
     if today_iso:
         TODAY = datetime.strptime(today_iso, "%Y-%m-%d").date()
-        PERIOD_B_END = TODAY
+    PERIOD_A_START, PERIOD_A_END, PERIOD_B_START, PERIOD_B_END = _compute_periods(TODAY)
     md = render_md()
     inner_html = md_lib.markdown(md, extensions=["extra", "tables", "fenced_code"])
     html = _wrap_html(inner_html)
