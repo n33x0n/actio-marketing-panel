@@ -20,12 +20,17 @@ if _mcp.exists():
 
 from fastapi import BackgroundTasks, FastAPI, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 
 import db
 import autopublish
 
 
 app = FastAPI(title="Actio Autopost Webhook")
+
+_static_dir = pathlib.Path(__file__).parent / "static"
+if _static_dir.exists():
+    app.mount("/form", StaticFiles(directory=str(_static_dir), html=True), name="form")
 
 
 def _db_path() -> str:
