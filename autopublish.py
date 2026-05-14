@@ -109,26 +109,27 @@ def pick_keyword() -> dict | None:
 # === LLM ===
 
 def _call_llm(prompt: str) -> str:
+    from langfuse.openai import openai
     api_key = _env("OPENROUTER_API_KEY_AUTOPOST")
     model = _env("AUTOPOST_LLM_MODEL", "anthropic/claude-sonnet-4.6")
-    r = httpx.post(
-        "https://openrouter.ai/api/v1/chat/completions",
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
+    client = openai.OpenAI(
+        api_key=api_key,
+        base_url="https://openrouter.ai/api/v1",
+        default_headers={
             "HTTP-Referer": "https://actio-marketing.tomlebioda.com",
             "X-Title": "Actio Marketing Autopost",
         },
-        json={
-            "model": model,
-            "messages": [{"role": "user", "content": prompt}],
-            "provider": {"data_collection": "deny"},
-            "temperature": 0.7,
-        },
         timeout=180.0,
     )
-    r.raise_for_status()
-    return r.json()["choices"][0]["message"]["content"]
+    resp = client.chat.completions.create(
+        model=model,
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.7,
+        extra_body={"provider": {"data_collection": "deny"}},
+        name="autopublish_draft",
+        metadata={"source": "autopublish.py", "use_case": "wp_post_draft"},
+    )
+    return resp.choices[0].message.content
 
 
 def _build_prompt(keyword: str, position: float, impressions: int, wp_categories: list[dict], edit_notes: str | None = None) -> str:

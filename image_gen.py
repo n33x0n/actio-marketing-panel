@@ -17,7 +17,10 @@ if _mcp.exists():
     except Exception:
         pass
 
+from langfuse import observe
 
+
+@observe(name="image_gen_nano_banana")
 def generate_image(prompt: str, output_path: str) -> str:
     """Generate image via OpenRouter, save to output_path. Returns path."""
     api_key = os.environ.get("OPENROUTER_API_KEY_AUTOPOST") or os.environ["OPENROUTER_API_KEY"]

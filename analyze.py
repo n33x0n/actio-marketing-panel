@@ -251,23 +251,24 @@ def collect_data_summary() -> dict[str, str]:
 
 
 def call_openrouter(prompt: str) -> str:
-    r = httpx.post(
-        "https://openrouter.ai/api/v1/chat/completions",
-        headers={
-            "Authorization": f"Bearer {_env('OPENROUTER_API_KEY')}",
-            "Content-Type": "application/json",
+    from langfuse.openai import openai
+    client = openai.OpenAI(
+        api_key=_env("OPENROUTER_API_KEY"),
+        base_url="https://openrouter.ai/api/v1",
+        default_headers={
             "HTTP-Referer": "https://actio.pl",
             "X-Title": "Actio Marketing CMO-layer",
         },
-        json={
-            "model": _env("OPENROUTER_MODEL", "anthropic/claude-opus-4.7"),
-            "messages": [{"role": "user", "content": prompt}],
-            "provider": {"data_collection": "deny"},
-        },
         timeout=180.0,
     )
-    r.raise_for_status()
-    return r.json()["choices"][0]["message"]["content"]
+    resp = client.chat.completions.create(
+        model=_env("OPENROUTER_MODEL", "anthropic/claude-opus-4.7"),
+        messages=[{"role": "user", "content": prompt}],
+        extra_body={"provider": {"data_collection": "deny"}},
+        name="daily_report_cmo",
+        metadata={"source": "analyze.py", "use_case": "daily_report"},
+    )
+    return resp.choices[0].message.content
 
 
 def _build_report_content(date_iso: str, report_md: str, sync_status: dict) -> str:

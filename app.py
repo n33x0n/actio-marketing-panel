@@ -19,7 +19,6 @@ import re
 from datetime import datetime, timezone
 
 import chainlit as cl
-import httpx
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -611,48 +610,52 @@ async def _llm_chat(user_msg: str) -> str:
     if not OPENROUTER_KEY:
         return "❌ Brak OPENROUTER_API_KEY w env."
 
+    from langfuse.openai import AsyncOpenAI
+    client = AsyncOpenAI(
+        api_key=OPENROUTER_KEY,
+        base_url="https://openrouter.ai/api/v1",
+        default_headers={
+            "HTTP-Referer": "https://actio.pl",
+            "X-Title": "Actio Marketing CMO-layer",
+        },
+        timeout=120.0,
+    )
+
     history = cl.user_session.get("chat_history") or []
     history.append({"role": "user", "content": user_msg})
     messages = [{"role": "system", "content": SYSTEM_PROMPT}] + history
 
-    async with httpx.AsyncClient(timeout=120.0) as client:
-        for _ in range(8):  # max 8 tool-call iterations
-            resp = await client.post(
-                "https://openrouter.ai/api/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {OPENROUTER_KEY}",
-                    "Content-Type": "application/json",
-                    "HTTP-Referer": "https://actio.pl",
-                    "X-Title": "Actio Marketing CMO-layer",
-                },
-                json={
-                    "model": CHAT_MODEL,
-                    "messages": messages,
-                    "tools": TOOLS_SCHEMA,
-                    "provider": {"data_collection": "deny"},
-                },
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            msg = data["choices"][0]["message"]
-            messages.append(msg)
+    session_id = cl.user_session.get("id") or "anonymous"
 
-            tool_calls = msg.get("tool_calls") or []
-            if not tool_calls:
-                final = msg.get("content", "(brak odpowiedzi)")
-                history.append({"role": "assistant", "content": final})
-                cl.user_session.set("chat_history", history[-20:])  # cap kontekst
-                return final
+    for _ in range(8):  # max 8 tool-call iterations
+        resp = await client.chat.completions.create(
+            model=CHAT_MODEL,
+            messages=messages,
+            tools=TOOLS_SCHEMA,
+            extra_body={"provider": {"data_collection": "deny"}},
+            name="chainlit_chat",
+            metadata={"source": "app.py", "use_case": "interactive_panel"},
+            session_id=str(session_id),
+        )
+        msg = resp.choices[0].message.model_dump(exclude_none=True)
+        messages.append(msg)
 
-            for tc in tool_calls:
-                fn = tc["function"]["name"]
-                args = json.loads(tc["function"].get("arguments") or "{}")
-                result = _execute_tool(fn, args)
-                messages.append({
-                    "role": "tool",
-                    "tool_call_id": tc["id"],
-                    "content": result[:8000],  # cap żeby nie eksplodować kontekstu
-                })
+        tool_calls = msg.get("tool_calls") or []
+        if not tool_calls:
+            final = msg.get("content") or "(brak odpowiedzi)"
+            history.append({"role": "assistant", "content": final})
+            cl.user_session.set("chat_history", history[-20:])  # cap kontekst
+            return final
+
+        for tc in tool_calls:
+            fn = tc["function"]["name"]
+            args = json.loads(tc["function"].get("arguments") or "{}")
+            result = _execute_tool(fn, args)
+            messages.append({
+                "role": "tool",
+                "tool_call_id": tc["id"],
+                "content": result[:8000],  # cap żeby nie eksplodować kontekstu
+            })
 
     return "(przekroczono limit iteracji tool calls)"
 

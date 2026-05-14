@@ -24,6 +24,8 @@ dependencies = [
     "uvicorn>=0.32",
     "python-slugify>=8.0",
     "python-multipart>=0.0.20",
+    "langfuse>=4.6.1",
+    "openai>=2.36.0",
 ]
 
 [tool.uv]
