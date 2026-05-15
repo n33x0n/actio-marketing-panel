@@ -187,17 +187,19 @@ def lead_type_breakdown(days: int = 21) -> dict:
     totals = _q("""
         SELECT lead_type, SUM(event_count) cnt
         FROM lead_events_daily
-        WHERE date BETWEEN ? AND ? AND lead_type IN ('form', 'phone')
+        WHERE date BETWEEN ? AND ?
         GROUP BY lead_type
     """, (s, e))
     by_type = {r["lead_type"]: int(r["cnt"]) for r in totals}
     form_count = by_type.get("form", 0)
     phone_count = by_type.get("phone", 0)
-    total = form_count + phone_count
+    untagged_count = by_type.get("(not set)", 0) + by_type.get("", 0)
+    total_tagged = form_count + phone_count
+    grand_total = total_tagged + untagged_count
 
-    # Skip section if too little data
-    if total < 5:
-        return {"show": False, "total": total}
+    # Skip section only if no events at all
+    if grand_total < 1:
+        return {"show": False, "total": 0}
 
     # Per landing dla form
     form_locations = _q("""
@@ -221,7 +223,9 @@ def lead_type_breakdown(days: int = 21) -> dict:
         "show": True,
         "form_count": form_count,
         "phone_count": phone_count,
-        "total": total,
+        "untagged_count": untagged_count,
+        "total_tagged": total_tagged,
+        "total": grand_total,
         "form_locations": [dict(r) for r in form_locations],
         "phones": [dict(r) for r in phones],
     }
@@ -293,8 +297,10 @@ def render_md() -> str:
     # Lead type breakdown (conditional)
     lb = lead_type_breakdown(21)
     if lb["show"]:
-        form_pct = lb["form_count"] * 100 // lb["total"] if lb["total"] else 0
-        phone_pct = lb["phone_count"] * 100 // lb["total"] if lb["total"] else 0
+        total = lb["total"]
+        form_pct = lb["form_count"] * 100 // total if total else 0
+        phone_pct = lb["phone_count"] * 100 // total if total else 0
+        untagged_pct = lb["untagged_count"] * 100 // total if total else 0
         md += f"""
 ---
 
@@ -302,11 +308,13 @@ def render_md() -> str:
 
 | Typ | Konwersje | % udziału |
 |---|---:|---:|
-| 📝 **Formularz CF7** | {lb['form_count']} | {form_pct}% |
-| 📞 **Klik na numer telefonu** | {lb['phone_count']} | {phone_pct}% |
-| **Razem** | **{lb['total']}** | 100% |
-
+| 📝 **Formularz CF7** (prawdziwe leady) | {lb['form_count']} | {form_pct}% |
+| 📞 **Klik na numer telefonu** (intent kontaktu) | {lb['phone_count']} | {phone_pct}% |
+| **Razem realne** | **{lb['total_tagged']}** | {form_pct + phone_pct}% |
 """
+        if lb["untagged_count"] > 0:
+            md += f"| _Bez tagu (sprzed wdrożenia GTM enrichment 12.05)_ | _{lb['untagged_count']}_ | _{untagged_pct}%_ |\n"
+        md += "\n"
         if lb["form_locations"]:
             md += "**Top strony z których wysłano formularz**:\n\n"
             md += "| Strona | Form ID | Konwersje |\n|---|---|---:|\n"
@@ -320,6 +328,8 @@ def render_md() -> str:
                 if num and not num.startswith('+'):
                     num = '+' + num
                 md += f"| `{num}` | `{p['link_location']}` | {p['cnt']} |\n"
+        if lb["untagged_count"] > lb["total_tagged"]:
+            md += f"\n_Większość eventów ({untagged_pct}%) nie ma jeszcze tagów custom dims — to dane sprzed 12.05. Od 12.05 nowe eventy są pełni tagowane._\n"
 
     md += f"""
 ---
