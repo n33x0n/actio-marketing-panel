@@ -143,7 +143,7 @@ def daily_trend(days: int = 7) -> list[dict]:
             "date": d.strftime("%d.%m") + f" ({weekday_pl[d.weekday()]})",
             "ads_imp": int(r["ads_imp"] or 0),
             "ads_clk": int(r["ads_clk"] or 0),
-            "gsc_imp": int(r["gsc_imp"] or 0),
+            "gsc_imp": int(r["gsc_imp"]) if r["gsc_imp"] is not None else None,
             "ga4_conv": float(r["ga4_conv"] or 0),
             "ga4_conv_cpc": float(r["ga4_conv_cpc"] or 0),
         })
@@ -272,7 +272,8 @@ def render_md() -> str:
 |---|---:|---:|---:|---:|---:|
 """
     for t in trend:
-        md += f"| {t['date']} | {fmt(t['ads_imp'])} | {fmt(t['ads_clk'])} | {fmt(t['gsc_imp'])} | {fmt(t['ga4_conv'], 'float')} | {fmt(t['ga4_conv_cpc'], 'float')} |\n"
+        gsc_cell = "Dane jeszcze nie dostępne" if t["gsc_imp"] is None else fmt(t["gsc_imp"])
+        md += f"| {t['date']} | {fmt(t['ads_imp'])} | {fmt(t['ads_clk'])} | {gsc_cell} | {fmt(t['ga4_conv'], 'float')} | {fmt(t['ga4_conv_cpc'], 'float')} |\n"
 
     md += f"""
 ---
