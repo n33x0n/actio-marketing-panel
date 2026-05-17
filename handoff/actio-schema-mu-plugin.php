@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Actio — Schema.org Injector (Complete Replacement)
  * Description: Pełny schema.org JSON-LD markup. Zastępuje moduł Schema Rank Math (DISABLE go w Rank Math → Dashboard po wgraniu tego pluginu). Generuje: Organization, LocalBusiness, WebSite, WebPage, Service (per /uslugi/* slug), Article (blog posts), BreadcrumbList oraz FAQPage (per slug z registry — auto-updated przez autopublisher).
- * Version: 2.0.0
+ * Version: 2.0.1
  * Author: Tom Lebioda
  * Author URI: https://tomlebioda.com
  * Contact: hello@tomlebioda.com
@@ -88,13 +88,21 @@ function actio_faqpage_registry(): array {
 }
 
 // ─── SCHEMA NODES ───────────────────────────────────────────────────────────
+// Brand variants (literówki + wariacje nazwy które ludzie wpisują w Google)
+// "Aktio" — pozycja 16,8 w GSC z 14 imp/m (literówka defense)
+// "Actio.pl"/"Actio Telefonia VoIP" — common variants
+function actio_brand_alternate_names(): array {
+    return ['Aktio', 'Actio.pl', 'Actio Telefonia VoIP'];
+}
+
 function actio_organization_node(): array {
     return [
-        '@type'        => 'Organization',
-        '@id'          => ACTIO_BASE_URL . '/#organization',
-        'name'         => ACTIO_BRAND_NAME,
-        'legalName'    => ACTIO_LEGAL_NAME,
-        'url'          => ACTIO_BASE_URL,
+        '@type'         => 'Organization',
+        '@id'           => ACTIO_BASE_URL . '/#organization',
+        'name'          => ACTIO_BRAND_NAME,
+        'alternateName' => actio_brand_alternate_names(),
+        'legalName'     => ACTIO_LEGAL_NAME,
+        'url'           => ACTIO_BASE_URL,
         'logo'         => [
             '@type' => 'ImageObject',
             '@id'   => ACTIO_BASE_URL . '/#logo',
@@ -174,6 +182,7 @@ function actio_local_business_node(): array {
         '@type'         => 'LocalBusiness',
         '@id'           => ACTIO_BASE_URL . '/#localbusiness',
         'name'          => ACTIO_BRAND_NAME,
+        'alternateName' => actio_brand_alternate_names(),
         'image'         => ACTIO_LOGO_URL,
         'url'           => ACTIO_BASE_URL,
         'telephone'     => '+48-61-648-90-00',
