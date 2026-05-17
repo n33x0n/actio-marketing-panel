@@ -758,8 +758,11 @@ async def _llm_chat(user_msg: str) -> str:
             tools=TOOLS_SCHEMA,
             extra_body={"provider": {"data_collection": "deny"}},
             name="chainlit_chat",
-            metadata={"source": "app.py", "use_case": "interactive_panel"},
-            session_id=str(session_id),
+            metadata={
+                "source": "app.py",
+                "use_case": "interactive_panel",
+                "session_id": str(session_id),
+            },
         )
         msg = resp.choices[0].message.model_dump(exclude_none=True)
         messages.append(msg)
