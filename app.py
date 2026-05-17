@@ -124,8 +124,8 @@ async def _send_ceo_welcome() -> None:
         author="Actio Marketing",
         content=(
             "### 👋 Cześć, Hubert!\n\n"
-            "Wybierz **📈 Raport** żeby zobaczyć dzisiejszy raport marketingowy "
-            "(taki sam jak codzienny mail). Lub **💬 Chat** żeby porozmawiać z asystentem."
+            "Z menu poniżej wybierz **📄 Raport** (dzisiejszy raport z maila), "
+            "**📊 Dashboard** (wykresy), **📈 Dzisiejsze leady** lub **💬 Chat z asystentem**."
         ),
     ).send()
 
@@ -157,10 +157,12 @@ MENU_ACTIONS = [
     cl.Action(name="today_leads", value="today_leads", label="📈 Dzisiejsze leady", payload={}),
 ]
 
-# CEO menu — minimal: tylko Raport + Chat (CEO nie potrzebuje technicznych narzędzi)
+# CEO menu — bez tech triggers (Alerty/Generate/Sync to CMO domain)
 MENU_ACTIONS_CEO = [
-    cl.Action(name="reports", value="reports", label="📈 Raport", payload={}),
+    cl.Action(name="dashboard", value="dashboard", label="📊 Dashboard", payload={}),
     cl.Action(name="chat", value="chat", label="💬 Chat z asystentem", payload={}),
+    cl.Action(name="reports", value="reports", label="📄 Raport", payload={}),
+    cl.Action(name="today_leads", value="today_leads", label="📈 Dzisiejsze leady", payload={}),
 ]
 
 
