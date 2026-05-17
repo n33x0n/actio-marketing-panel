@@ -118,55 +118,31 @@ async def _send_alert_banner() -> None:
 
 
 async def _send_ceo_welcome() -> None:
-    """Pozytywny welcome dla CEO — pokazuje co rośnie, bez technicznych alertów.
+    """Krótki welcome dla CEO — bez metryk (te są w Raporcie)."""
+    await cl.Message(
+        author="Actio Marketing",
+        content=(
+            "### 👋 Cześć, Hubert!\n\n"
+            "Wybierz **📈 Raport** żeby zobaczyć dzisiejszy raport marketingowy "
+            "(taki sam jak codzienny mail). Lub **💬 Chat** żeby porozmawiać z asystentem."
+        ),
+    ).send()
 
-    Używa funkcji z panel_positive_report żeby zachować spójność z mailem CEO.
-    """
+
+async def _render_ceo_report() -> None:
+    """CEO Raport = treść codziennego maila (panel_positive_report.generate)."""
     try:
         import panel_positive_report as ppr
-        from datetime import date, timedelta
-        # Period B: ostatnie 21 dni (zgodnie z sliding window logic w ppr)
-        today = date.today()
-        period_b_end = today - timedelta(days=1)
-        period_b_start = period_b_end - timedelta(days=20)
-        period_a_end = period_b_start - timedelta(days=1)
-        period_a_start = period_a_end - timedelta(days=20)
-
-        ppr.PERIOD_A_START = period_a_start
-        ppr.PERIOD_A_END = period_a_end
-        ppr.PERIOD_B_START = period_b_start
-        ppr.PERIOD_B_END = period_b_end
-        ppr.TODAY = today
-
-        A = ppr.period_metrics(period_a_start, period_a_end)
-        B = ppr.period_metrics(period_b_start, period_b_end)
-
-        def pct(a, b):
-            if not a:
-                return "—"
-            d = (b - a) / a * 100
-            arrow = "⬆️" if d > 0 else ("⬇️" if d < 0 else "→")
-            return f"{arrow} {d:+.0f}%"
-
-        msg = f"""### 📈 Cześć, Hubert!
-
-**Ostatnie 21 dni vs poprzednie 21 dni**:
-
-| Metryka | Wcześniej | Teraz | Zmiana |
-|---|---:|---:|---:|
-| Wyświetlenia paid | {A['ads_impressions']:,} | {B['ads_impressions']:,} | {pct(A['ads_impressions'], B['ads_impressions'])} |
-| Kliki paid | {A['ads_clicks']:,} | {B['ads_clicks']:,} | {pct(A['ads_clicks'], B['ads_clicks'])} |
-| Konwersje (GA4) | {A['ga4_conv_all']:.0f} | {B['ga4_conv_all']:.0f} | {pct(A['ga4_conv_all'], B['ga4_conv_all'])} |
-| Wyświetlenia organic (GSC) | {A['gsc_impressions']:,} | {B['gsc_impressions']:,} | {pct(A['gsc_impressions'], B['gsc_impressions'])} |
-
-_Wybierz **Dashboard** żeby zobaczyć wykresy lub **Raporty** żeby przeczytać codzienny raport CMO._
-""".replace(",", " ")
-        await cl.Message(author="Actio Marketing", content=msg).send()
+        pkg = ppr.generate()  # zwraca {subject, plain, html}
+        # Subject jako header, plain markdown jako content
+        await cl.Message(
+            author="Actio Marketing Report",
+            content=pkg["plain"],
+        ).send()
     except Exception as e:
-        # Fallback — krótki welcome bez metryk
         await cl.Message(
             author="Actio Marketing",
-            content="### 👋 Cześć, Hubert!\n\nWybierz **Raporty** żeby zobaczyć ostatnie raporty marketingowe.",
+            content=f"⚠️ Nie udało się wygenerować raportu: {type(e).__name__}: {e}",
         ).send()
 
 
@@ -182,12 +158,29 @@ MENU_ACTIONS = [
     cl.Action(name="today_leads", value="today_leads", label="📈 Dzisiejsze leady", payload={}),
 ]
 
+# CEO menu — minimal: tylko Raport + Chat (CEO nie potrzebuje technicznych narzędzi)
+MENU_ACTIONS_CEO = [
+    cl.Action(name="reports", value="reports", label="📈 Raport", payload={}),
+    cl.Action(name="chat", value="chat", label="💬 Chat z asystentem", payload={}),
+]
+
+
+def _current_user_is_ceo() -> bool:
+    user = cl.user_session.get("user")
+    user_email = (user.identifier if user else "anonymous").lower()
+    return _is_ceo_user(user_email)
+
 
 async def _show_menu(intro: str | None = None) -> None:
     _set_mode("menu")
-    text = intro or "### Wybierz, co chcesz zobaczyć"
-    text += f"\n\n_Aktualny zakres dat: **{_days()} dni** (zmień w Settings ⚙️ — ikona koła zębatego)_"
-    await cl.Message(content=text, actions=MENU_ACTIONS).send()
+    is_ceo = _current_user_is_ceo()
+    if is_ceo:
+        text = intro or "### Wybierz"
+        await cl.Message(content=text, actions=MENU_ACTIONS_CEO).send()
+    else:
+        text = intro or "### Wybierz, co chcesz zobaczyć"
+        text += f"\n\n_Aktualny zakres dat: **{_days()} dni** (zmień w Settings ⚙️ — ikona koła zębatego)_"
+        await cl.Message(content=text, actions=MENU_ACTIONS).send()
 
 
 # ── Auth (Cloudflare Access header) ──────────────────────────────────────────
@@ -286,7 +279,12 @@ async def act_chat(action):
 @cl.action_callback("reports")
 async def act_reports(action):
     _set_mode("reports")
-    await _render_reports_list()
+    if _current_user_is_ceo():
+        # CEO dostaje treść codziennego maila (panel_positive_report)
+        await _render_ceo_report()
+    else:
+        # CMO: lista wszystkich raportów z md-reports
+        await _render_reports_list()
 
 
 @cl.action_callback("alerts")
