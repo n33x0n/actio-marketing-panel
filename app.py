@@ -112,7 +112,7 @@ async def _send_ceo_welcome() -> None:
             arrow = "⬆️" if d > 0 else ("⬇️" if d < 0 else "→")
             return f"{arrow} {d:+.0f}%"
 
-        msg = f"""### 📈 Witaj Hubercie
+        msg = f"""### 📈 Witaj, Hubert!
 
 **Ostatnie 21 dni vs poprzednie 21 dni**:
 
@@ -130,7 +130,7 @@ _Wybierz **Dashboard** żeby zobaczyć wykresy lub **Raporty** żeby przeczytać
         # Fallback — krótki welcome bez metryk
         await cl.Message(
             author="Actio Marketing",
-            content="### 👋 Witaj Hubercie\n\nWybierz **Raporty** żeby zobaczyć ostatnie raporty marketingowe.",
+            content="### 👋 Witaj, Hubert!\n\nWybierz **Raporty** żeby zobaczyć ostatnie raporty marketingowe.",
         ).send()
 
 
