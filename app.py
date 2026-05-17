@@ -26,6 +26,7 @@ import plotly.graph_objects as go
 import alerts
 import analyze  # ładuje env z .mcp.json przy imporcie
 import db
+import panel_positive_report as ppr
 
 
 # ── Konfiguracja ──────────────────────────────────────────────────────────────
@@ -132,9 +133,7 @@ async def _send_ceo_welcome() -> None:
 async def _render_ceo_report() -> None:
     """CEO Raport = treść codziennego maila (panel_positive_report.generate)."""
     try:
-        import panel_positive_report as ppr
         pkg = ppr.generate()  # zwraca {subject, plain, html}
-        # Subject jako header, plain markdown jako content
         await cl.Message(
             author="Actio Marketing Report",
             content=pkg["plain"],
