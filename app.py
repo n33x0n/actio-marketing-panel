@@ -56,8 +56,18 @@ def _mode() -> str:
 
 # ── Banner alertów ────────────────────────────────────────────────────────────
 
+# Whitelist CEO-style emails (positive view, bez technicznych alertów)
+CEO_EMAILS = {"hubert.porebski@actio.pl"}
+
+
+def _is_ceo_user(user_email: str | None) -> bool:
+    if not user_email:
+        return False
+    return user_email.lower() in {e.lower() for e in CEO_EMAILS}
+
+
 async def _send_alert_banner() -> None:
-    """Wysyła wiadomość z banner-em jeśli są nierozwiązane alerty."""
+    """Wysyła wiadomość z banner-em jeśli są nierozwiązane alerty. CMO only."""
     try:
         df = db.fetch_recent_alerts(DB_PATH, limit=5, only_unresolved=True)
     except Exception:
@@ -69,6 +79,59 @@ async def _send_alert_banner() -> None:
         author="🚨 Alerty",
         content=f"### ⚠️ Aktywne alerty ({len(df)})\n\n{items}\n\n_Wybierz **Alerty** w menu żeby zarządzać._",
     ).send()
+
+
+async def _send_ceo_welcome() -> None:
+    """Pozytywny welcome dla CEO — pokazuje co rośnie, bez technicznych alertów.
+
+    Używa funkcji z panel_positive_report żeby zachować spójność z mailem CEO.
+    """
+    try:
+        import panel_positive_report as ppr
+        from datetime import date, timedelta
+        # Period B: ostatnie 21 dni (zgodnie z sliding window logic w ppr)
+        today = date.today()
+        period_b_end = today - timedelta(days=1)
+        period_b_start = period_b_end - timedelta(days=20)
+        period_a_end = period_b_start - timedelta(days=1)
+        period_a_start = period_a_end - timedelta(days=20)
+
+        ppr.PERIOD_A_START = period_a_start
+        ppr.PERIOD_A_END = period_a_end
+        ppr.PERIOD_B_START = period_b_start
+        ppr.PERIOD_B_END = period_b_end
+        ppr.TODAY = today
+
+        A = ppr.period_metrics(period_a_start, period_a_end)
+        B = ppr.period_metrics(period_b_start, period_b_end)
+
+        def pct(a, b):
+            if not a:
+                return "—"
+            d = (b - a) / a * 100
+            arrow = "⬆️" if d > 0 else ("⬇️" if d < 0 else "→")
+            return f"{arrow} {d:+.0f}%"
+
+        msg = f"""### 📈 Witaj Hubercie
+
+**Ostatnie 21 dni vs poprzednie 21 dni**:
+
+| Metryka | Wcześniej | Teraz | Zmiana |
+|---|---:|---:|---:|
+| Wyświetlenia paid | {A['ads_impressions']:,} | {B['ads_impressions']:,} | {pct(A['ads_impressions'], B['ads_impressions'])} |
+| Kliki paid | {A['ads_clicks']:,} | {B['ads_clicks']:,} | {pct(A['ads_clicks'], B['ads_clicks'])} |
+| Konwersje (GA4) | {A['ga4_conv_all']:.0f} | {B['ga4_conv_all']:.0f} | {pct(A['ga4_conv_all'], B['ga4_conv_all'])} |
+| Wyświetlenia organic (GSC) | {A['gsc_impressions']:,} | {B['gsc_impressions']:,} | {pct(A['gsc_impressions'], B['gsc_impressions'])} |
+
+_Wybierz **Dashboard** żeby zobaczyć wykresy lub **Raporty** żeby przeczytać codzienny raport CMO._
+""".replace(",", " ")
+        await cl.Message(author="Actio Marketing", content=msg).send()
+    except Exception as e:
+        # Fallback — krótki welcome bez metryk
+        await cl.Message(
+            author="Actio Marketing",
+            content="### 👋 Witaj Hubercie\n\nWybierz **Raporty** żeby zobaczyć ostatnie raporty marketingowe.",
+        ).send()
 
 
 # ── Główne menu ───────────────────────────────────────────────────────────────
@@ -91,6 +154,23 @@ async def _show_menu(intro: str | None = None) -> None:
     await cl.Message(content=text, actions=MENU_ACTIONS).send()
 
 
+# ── Auth (Cloudflare Access header) ──────────────────────────────────────────
+
+@cl.header_auth_callback
+def header_auth_callback(headers: dict) -> cl.User | None:
+    """Identyfikuje usera po Cloudflare Access header `Cf-Access-Authenticated-User-Email`.
+
+    Bez header (np. local dev) zwraca generic 'anonymous' user.
+    """
+    # Headers w Chainlit są dict z lowercase keys
+    email = (
+        headers.get('cf-access-authenticated-user-email')
+        or headers.get('Cf-Access-Authenticated-User-Email')
+        or 'anonymous'
+    )
+    return cl.User(identifier=email, metadata={"email": email})
+
+
 # ── on_chat_start ─────────────────────────────────────────────────────────────
 
 @cl.on_chat_start
@@ -110,14 +190,23 @@ async def on_chat_start():
         ),
     ]).send()
 
-    await _send_alert_banner()
-    await cl.Message(
-        content=(
-            "### Panel Actio Marketing\n\n"
-            "Witaj. Wybierz tryb z menu poniżej. Wszystko możesz też zapytać po prostu w chacie — "
-            "asystent (Sonnet 4.6) ma dostęp do bazy danych i odpowie po polsku."
-        ),
-    ).send()
+    user = cl.user_session.get("user")
+    user_email = (user.identifier if user else "anonymous").lower()
+    is_ceo = _is_ceo_user(user_email)
+
+    if is_ceo:
+        # CEO view (Hubert): positive metrics, brak alertów
+        await _send_ceo_welcome()
+    else:
+        # CMO view (Tom + reszta): full technical view z alertami
+        await _send_alert_banner()
+        await cl.Message(
+            content=(
+                "### Panel Actio Marketing\n\n"
+                "Witaj. Wybierz tryb z menu poniżej. Wszystko możesz też zapytać po prostu w chacie — "
+                "asystent (Sonnet 4.6) ma dostęp do bazy danych i odpowie po polsku."
+            ),
+        ).send()
     await _show_menu()
 
 
