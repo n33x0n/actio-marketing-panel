@@ -15,6 +15,7 @@ __pycache__/
 *.db
 *.db-wal
 *.db-shm
+chainlit_data.db
 
 # Logs & runtime artifacts
 logs/

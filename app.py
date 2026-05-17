@@ -35,9 +35,42 @@ MD_REPORTS_DIR = os.environ.get("MD_REPORTS_DIR", "./md-reports")
 MD_FULL_DIR = os.environ.get("MD_FULL_DIR", "./md-full")
 OPENROUTER_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 CHAT_MODEL = os.environ.get("CHAINLIT_CHAT_MODEL", "anthropic/claude-sonnet-4.6")
+CHAINLIT_DB_PATH = os.environ.get(
+    "CHAINLIT_DB_PATH",
+    str(pathlib.Path(DB_PATH).parent / "chainlit_data.db"),
+)
 
 DEFAULT_DAYS = 30
 DAYS_OPTIONS = [7, 14, 30, 60, 90, 180, 365]
+
+
+# ── Chainlit Data Layer (SQLAlchemy + SQLite) ────────────────────────────────
+# Self-hosted persistent chat history — pojawia się jako sidebar w UI.
+
+def _init_chainlit_schema() -> None:
+    """Tworzy 5 tabel Chainlit w osobnej bazie SQLite (idempotent)."""
+    import sqlite3
+    schema_path = pathlib.Path(__file__).parent / "chainlit_schema.sql"
+    if not schema_path.exists():
+        return
+    conn = sqlite3.connect(CHAINLIT_DB_PATH)
+    try:
+        conn.executescript(schema_path.read_text(encoding="utf-8"))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+_init_chainlit_schema()
+
+try:
+    import chainlit.data as cl_data
+    from chainlit.data.sql_alchemy import SQLAlchemyDataLayer
+    cl_data._data_layer = SQLAlchemyDataLayer(
+        conninfo=f"sqlite+aiosqlite:///{CHAINLIT_DB_PATH}",
+    )
+except Exception as _e:
+    print(f"Chainlit data layer init failed (continuing without persistence): {_e}")
 
 
 # ── Helpery sesji ─────────────────────────────────────────────────────────────
