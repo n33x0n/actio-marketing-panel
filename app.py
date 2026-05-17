@@ -91,10 +91,7 @@ def _mode() -> str:
 # ── Banner alertów ────────────────────────────────────────────────────────────
 
 # Whitelist CEO-style emails (positive view, bez technicznych alertów)
-CEO_EMAILS = {
-    "hubert.porebski@actio.pl",
-    "tlebioda@gmail.com",  # TEMP: Tom testuje CEO view — cofnij po teście
-}
+CEO_EMAILS = {"hubert.porebski@actio.pl"}
 
 
 def _is_ceo_user(user_email: str | None) -> bool:
