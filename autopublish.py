@@ -9,6 +9,7 @@ Flow:
 """
 from __future__ import annotations
 
+import datetime
 import json
 import os
 import pathlib
@@ -165,8 +166,18 @@ Output: **TYLKO czysty JSON, bez markdown code fence**, taki:
   "content_md": "# Tytuł\\n\\n...",
   "meta_description": "...",
   "categories": ["VoIP"],
-  "tags": ["tag-1","tag-2"]
+  "tags": ["tag-1","tag-2"],
+  "schema_faqpage": [
+    {{"q": "pytanie 1?", "a": "odpowiedź 1 (1-3 zdania, pełna informacja, gotowe do JSON-LD)"}},
+    {{"q": "pytanie 2?", "a": "..."}}
+  ]
 }}
+
+**WAŻNE dla `schema_faqpage`**:
+- 5-8 par Q&A, **te same** które wystąpią w sekcji FAQ w content_md (1:1 mapping)
+- Odpowiedź pełna i samowystarczalna (AI search cytuje z FAQ schema, nie z surrounding content)
+- Bez markdown w odpowiedziach (plain text — będzie embedded w JSON-LD)
+- Pytania zaczynają się od "Czym", "Jak", "Czy", "Ile", "Dlaczego" itd.
 """
 
 
@@ -351,6 +362,7 @@ def generate_draft() -> dict:
         "tags": json.dumps(parsed.get("tags", []), ensure_ascii=False),
         "image_path": img_path,
         "image_prompt": img_prompt if img_path else None,
+        "schema_faqpage": json.dumps(parsed.get("schema_faqpage", []), ensure_ascii=False),
         "approval_token": token,
     }
     draft_id = db.insert_draft(db_path, draft_row)
@@ -411,6 +423,67 @@ def regenerate_with_edits(parent_draft_id: int, edit_notes: str) -> dict:
     return {"status": "regenerated", "draft_id": new_draft_id, "parent": parent_draft_id}
 
 
+def _update_schema_plugin(slug: str, faq_items: list[dict]) -> bool:
+    """Dopisz FAQPage entry dla danego slugu do handoff/actio-schema-mu-plugin.php.
+
+    Idempotent: pomija jeśli slug już ma marker FAQ_ENTRY_START.
+    Tworzy backup `.bak.<timestamp>` przed zmianą.
+    Tom potem ręcznie wgrywa plik via FTP do /wp-content/mu-plugins/.
+
+    Returns True jeśli plik został zmodyfikowany.
+    """
+    if not faq_items:
+        return False
+
+    plugin_path = pathlib.Path(__file__).parent / "handoff" / "actio-schema-mu-plugin.php"
+    if not plugin_path.exists():
+        print(f"⚠️  Plugin file not found: {plugin_path}")
+        return False
+
+    content = plugin_path.read_text(encoding="utf-8")
+
+    start_marker = f"// === FAQ_ENTRY_START: {slug} ==="
+    if start_marker in content:
+        print(f"⏭️  Slug '{slug}' już istnieje w pluginie — skip")
+        return False
+
+    insert_marker = "// === FAQ_AUTO_INSERT_AFTER ==="
+    if insert_marker not in content:
+        print(f"⚠️  Marker FAQ_AUTO_INSERT_AFTER nieobecny w {plugin_path.name}")
+        return False
+
+    def _esc(s: str) -> str:
+        return s.replace("\\", "\\\\").replace("'", "\\'").strip()
+
+    lines = [
+        f"        // === FAQ_ENTRY_START: {slug} ===",
+        f"        '{slug}' => [",
+    ]
+    for item in faq_items:
+        q = _esc(item.get("q", ""))
+        a = _esc(item.get("a", ""))
+        if not q or not a:
+            continue
+        lines.append(f"            ['q' => '{q}',")
+        lines.append(f"             'a' => '{a}'],")
+    lines.append("        ],")
+    lines.append(f"        // === FAQ_ENTRY_END: {slug} ===")
+    lines.append("")
+
+    entry_block = "\n".join(lines)
+    new_content = content.replace(insert_marker, entry_block + "\n        " + insert_marker)
+
+    ts = int(datetime.datetime.utcnow().timestamp())
+    backup_path = plugin_path.with_suffix(f".php.bak.{ts}")
+    backup_path.write_text(content, encoding="utf-8")
+    plugin_path.write_text(new_content, encoding="utf-8")
+
+    print(f"✅ Plugin updated: added FAQ entry '{slug}' ({len(faq_items)} Q&A)")
+    print(f"   Backup: {backup_path.name}")
+    print(f"   ⚠️  Tom: re-upload {plugin_path.name} do /wp-content/mu-plugins/ via FTP")
+    return True
+
+
 def publish_draft(draft_id: int) -> dict:
     """Publishuje draft via WP REST. Wywoływane przez webhook (approve) lub mail_checker (OK)."""
     db_path = _env("DB_PATH")
@@ -457,6 +530,15 @@ def publish_draft(draft_id: int) -> dict:
             post_url=result["url"],
             post_id=result["id"],
         )
+
+        # Auto-update mu-plugin z FAQPage schema (Tom re-uploaduje via FTP)
+        try:
+            faq_items = json.loads(draft.get("schema_faqpage") or "[]")
+            if faq_items:
+                _update_schema_plugin(draft["slug"], faq_items)
+        except Exception as e:
+            print(f"Plugin schema update failed (non-fatal): {type(e).__name__}: {e}")
+
         return {"status": "published", "post_url": result["url"], "post_id": result["id"]}
     except Exception as e:
         err = f"{type(e).__name__}: {e}"

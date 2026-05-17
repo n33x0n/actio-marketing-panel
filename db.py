@@ -144,6 +144,7 @@ CREATE TABLE IF NOT EXISTS autopost_drafts (
     tags            TEXT    NOT NULL DEFAULT '[]',
     image_path      TEXT,
     image_prompt    TEXT,
+    schema_faqpage  TEXT    DEFAULT '[]',
     approval_token  TEXT    NOT NULL UNIQUE,
     token_used_at   TEXT,
     parent_draft_id INTEGER,
@@ -181,6 +182,9 @@ _ADS_CAMPAIGN_LOST_IS_COLS = [
     ("top_is", "REAL DEFAULT 0"),
     ("absolute_top_is", "REAL DEFAULT 0"),
 ]
+_AUTOPOST_DRAFTS_NEW_COLS = [
+    ("schema_faqpage", "TEXT DEFAULT '[]'"),
+]
 
 
 @contextmanager
@@ -201,6 +205,10 @@ def init_db(path: str) -> None:
         for col, decl in _ADS_CAMPAIGN_LOST_IS_COLS:
             if col not in existing:
                 conn.execute(f"ALTER TABLE ads_campaign_daily ADD COLUMN {col} {decl}")
+        existing_drafts = {r[1] for r in conn.execute("PRAGMA table_info(autopost_drafts)").fetchall()}
+        for col, decl in _AUTOPOST_DRAFTS_NEW_COLS:
+            if col not in existing_drafts:
+                conn.execute(f"ALTER TABLE autopost_drafts ADD COLUMN {col} {decl}")
 
 
 def upsert_rows(path: str, rows: list[dict]) -> int:

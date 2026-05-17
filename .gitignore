@@ -21,7 +21,9 @@ logs/
 md-reports/
 md-full/
 autopost_images/
-handoff/
+handoff/*
+!handoff/actio-schema-mu-plugin.php
+handoff/*.bak.*
 .files/
 
 # Brand assets (proprietary)
@@ -38,6 +40,10 @@ img/
 .chainlit/translations/*
 !.chainlit/translations/pl-PL.json
 .chainlit/.files/
+
+# Playwright MCP runtime + ad-hoc screenshots
+.playwright-mcp/
+kontakt-full.png
 
 # Claude Code
 .claude/
