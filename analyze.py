@@ -57,6 +57,12 @@ Jeśli kampania jest ENABLED w live state — NIE sugeruj jej pauzowania ze wzgl
 Realny lead-event w GA4 to `generate_lead` (klik tel: + submit form na /kontakt/ + form na landingach inline).
 Lead source (`generate_lead`) jest poprawnie skonfigurowany.
 
+KRYTYCZNY KONTEKST — NIE flaguj poniższego jako awarii:
+- 30.05.2026 ŚWIADOMIE usunęliśmy regułę GA4 zawyżającą `generate_lead` ~7× (86% było fałszywe: page_view na /kontakt → generate_lead) + dedup tagów GTM.
+- Dlatego conv/`generate_lead` SPADŁY skokowo ok. 30.05 (np. google/cpc z 20-60/dzień do 1-3/dzień). To ZAMIERZONA de-inflacja, NIE uszkodzony tracking. NIE pisz „uszkodzony tracking" / „collapse konwersji", NIE rekomenduj „diagnozuj tracking".
+- Realny baseline po de-inflacji: ~42 leady/mies ≈ 12-13/tydz ≈ 2-5/dzień (phone+form+registration). To NORMA — nie alarmuj że „za mało leadów".
+- Okno 7d obejmujące dni sprzed 30.05 ma ZAWYŻONE conv (fake'i). NIE używaj per-kampania conv ani ROAS z brudnego okna (przed 30.05) do rekomendacji skalowania budżetu — czysty sygnał liczy się dopiero od 30.05.
+
 Mając poniższe dane, napisz **krótki raport po polsku** w formacie markdown z trzema sekcjami:
 
 ## Daily digest
