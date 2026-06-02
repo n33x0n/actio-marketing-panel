@@ -58,20 +58,80 @@ def _csv(key: str) -> list[str]:
     return [e.strip() for e in raw.split(",") if e.strip()]
 
 
+# === TOPIC OVERLAP (semantic anti-repetition) ===
+
+# Polskie stop words + service-related "filler" które nie różnicują tematów.
+_TOPIC_STOP = {
+    "dla", "firm", "firmy", "firmom", "firma", "biznes", "biznesu", "biznesowy",
+    "jak", "co", "daje", "działa", "dziala", "robi", "robic",
+    "i", "w", "z", "na", "o", "do", "od", "po", "po", "u", "we", "ze", "zo",
+    "to", "ten", "ta", "tego", "tej", "tych", "tym", "tymi",
+    "jest", "są", "sa", "być", "byc", "była", "byly", "było", "bylo",
+    "ale", "też", "tez", "już", "juz", "tylko", "także", "takze",
+    "można", "mozna", "trzeba", "warto", "polski", "polska", "polsce", "pl",
+    "co", "który", "ktory", "która", "ktora", "które", "ktore",
+    "kogo", "czemu", "czy", "tak", "nie", "nim", "niej", "nim", "go", "ich",
+    "online", "internetowy", "internet", "nowoczesny", "nowoczesna",
+    "actio", "syntell",  # własna marka – nie różnicuje
+    "twoj", "twoja", "swoj", "swoja",
+}
+
+
+def _topic_tokens(*texts: str) -> set[str]:
+    """Wyciągnij significant tokens z keyword/slug/title.
+
+    Tokenize: lowercase, split on non-alphanum, filter stop words i tokeny < 3 znaków.
+    Używane do wykrywania semantic overlap (np. "voip" w "telefonia voip" i "voip dla firm").
+    """
+    tokens = set()
+    for t in texts:
+        if not t:
+            continue
+        for tok in re.split(r"[^a-ząęłńóśźż0-9]+", t.lower()):
+            if len(tok) >= 3 and tok not in _TOPIC_STOP:
+                tokens.add(tok)
+    return tokens
+
+
+def _is_topic_repeat(candidate_kw: str, recent: list[dict]) -> bool:
+    """True jeśli kandydat semantycznie pokrywa się z którymkolwiek z ostatnich postów.
+
+    Logika: jeśli candidate ma ≥1 significant token wspólny z którymkolwiek z `recent`,
+    traktujemy to jako repeat. Próg 1 jest agresywny celowo – brand ma wąską domenę,
+    "voip" / "sip" / "trunk" to silne markery tematu. Sliding window 7 cykli (parametr `recent`).
+    """
+    cand_tokens = _topic_tokens(candidate_kw)
+    if not cand_tokens:
+        return False
+    for prev in recent:
+        prev_tokens = _topic_tokens(prev.get("keyword"), prev.get("slug"), prev.get("title"))
+        if cand_tokens & prev_tokens:  # set intersection
+            return True
+    return False
+
+
 # === GSC PICKER ===
 
 def pick_keyword() -> dict | None:
-    """Wybierz keyword z GSC — top 30 queries, pos 11-30, imp ≥50, nie pokryty."""
+    """Wybierz keyword z GSC — top 50 queries, pos 11-50, imp ≥20, nie pokryty.
+
+    Anti-repetition: pomija candidates które semantycznie pokrywają się z którymkolwiek
+    z ostatnich 7 opublikowanych/zatwierdzonych draftów (token-overlap, patrz _is_topic_repeat).
+    Sliding window – po 7 cyklach kategoria znowu dostępna.
+    """
     db_path = _env("DB_PATH")
     df = db.fetch_gsc_top_queries(db_path, days=14, top=50)
     if df.empty:
         return None
 
-    # Filter: pos 11-30, imp ≥50
-    candidates = df[(df["avg_position"] >= 11) & (df["avg_position"] <= 30) & (df["impressions"] >= 50)]
+    # Filter: pos 11-50, imp ≥20 (rozszerzone 27.05 – małe GSC visibility, mało kandydatów w wąskim oknie)
+    candidates = df[(df["avg_position"] >= 11) & (df["avg_position"] <= 50) & (df["impressions"] >= 20)]
 
-    # Skip queries already covered recently in autopost
+    # Skip queries already covered recently in autopost (90 dni, surface match)
     covered = db.fetch_recent_published_keywords(db_path, days=90)
+
+    # Topic-overlap (ostatnie 7 draftów, semantic match)
+    recent_topics = db.fetch_recent_published_topics(db_path, limit=7)
 
     # Skip queries that already have a dedicated post (tight match: keyword w title lub slug)
     def _kw_already_covered(kw: str) -> bool:
@@ -95,6 +155,9 @@ def pick_keyword() -> dict | None:
         if not kw or len(kw) < 5:
             continue
         if any(kw.lower() in c.lower() or c.lower() in kw.lower() for c in covered):
+            continue
+        if _is_topic_repeat(kw, recent_topics):
+            print(f"[autopublish] skip '{kw}' – topic overlap z ostatnimi 7 draftami")
             continue
         if _kw_already_covered(kw):
             continue
@@ -133,11 +196,45 @@ def _call_llm(prompt: str) -> str:
     return resp.choices[0].message.content
 
 
+_ACTIO_SERVICES_URLS = """- SIP Trunk: https://actio.pl/uslugi/sip-trunk/
+- 3CX Phone System: https://actio.pl/uslugi/3cx-phone-system/
+- SMS API (dla developerów/marketing): https://actio.pl/uslugi/sms-api/
+- Wirtualna Centrala telefoniczna: https://actio.pl/uslugi/wirtualna-centrala/
+- Actio Mobile (numery komórkowe VoIP): https://actio.pl/uslugi/actio-mobile/ albo https://actio.pl/uslugi/wirtualny-numer-komorkowy-voip/
+- AI w komunikacji (voicebot, IVR): https://actio.pl/uslugi/rozwiazania-sztucznej-inteligencji-ai-w-komunikacji/
+- Portacja numeru (MNP/LNP): https://actio.pl/uslugi/zachowaj-swoj-numer-i-przejdz-do-actio-szybko-bezplatnie-i-bez-przerw-w-dzialaniu/
+- Wirtualny fax: https://actio.pl/uslugi/wirtualny-fax/
+- Poczta głosowa: https://actio.pl/uslugi/poczta-glosowa/
+- Przekierowanie połączeń: https://actio.pl/uslugi/przekierowanie-polaczen/
+- Ankiety telefoniczne (IVR/CATI): https://actio.pl/uslugi/ankiety-telefoniczne/
+- SMS przez VoIP: https://actio.pl/uslugi/sms-przez-voip/
+- Telekonferencje / wideokonferencje: https://actio.pl/uslugi/wideokonferencja/
+- Komunikacja głosowa VoIP (overview): https://actio.pl/uslugi/nowoczesna-komunikacja-glosowa-z-voip/
+- Cennik: https://actio.pl/cennik
+- Załóż konto / zarejestruj się: https://actio.pl/rejestracja/
+- Kontakt z zespołem: https://actio.pl/kontakt/"""
+
+
+def _recent_topics_block(path: str, limit: int = 7) -> str:
+    """Render listę ostatnich N draftów dla LLM jako kontekst "nie pisz o tym samym"."""
+    recent = db.fetch_recent_published_topics(path, limit=limit)
+    if not recent:
+        return "(brak — to pierwszy post)"
+    lines = []
+    for r in recent:
+        kw = r.get("keyword") or "?"
+        slug = r.get("slug") or "?"
+        pub = (r.get("published_at") or "")[:10]
+        lines.append(f"- {pub}: keyword=\"{kw}\" → slug=\"{slug}\"")
+    return "\n".join(lines)
+
+
 def _build_prompt(keyword: str, position: float, impressions: int, wp_categories: list[dict], edit_notes: str | None = None) -> str:
     cat_names = ", ".join(f'"{c["name"]}"' for c in wp_categories)
     edit_block = ""
     if edit_notes:
         edit_block = f"\n\n**UWAGI DO POPRAWY (regeneracja)**:\n{edit_notes}\n\nUwzględnij powyższe uwagi w nowej wersji."
+    recent_block = _recent_topics_block(_env("DB_PATH"), limit=7)
 
     return f"""Jesteś content marketerem Actio (polski operator VoIP B2B, marka SYNTELL S.A., 20+ lat na rynku, klienci m.in. PGE, koleje, Pepco).
 
@@ -147,14 +244,29 @@ Napisz post blogowy pod keyword: "{keyword}"
 - GSC pozycja organic: {position:.1f} (chcemy do top 10)
 - Wyświetlenia/m: {impressions}
 
-**Wymagania**:
-- Tytuł 50-65 znaków, zawiera keyword
-- Treść 1000-1500 słów, markdown z H2/H3 sekcjami
-- Sekcja "Najczęstsze pytania (FAQ)" na końcu, 5-8 pytań w formacie ### Pytanie? + odpowiedź
+**OSTATNIE 7 OPUBLIKOWANYCH POSTÓW** (NIE powielaj tych tematów – pisz tak, by post wnosił nową wartość i NIE konkurował z poprzednimi w wynikach Google):
+{recent_block}
+
+Jeśli przydzielony `keyword` jest semantycznie zbliżony do któregoś z powyższych (np. wspólny rdzeń typu "voip" / "sip trunk" / "wirtualny numer"), **przesuń akcent na inny aspekt usługi**: konkretną branżę, use case, porównanie, integrację z CRM, koszt, RODO/bezpieczeństwo, migrację, etc. — tak by nie był to kolejny wariant tego samego artykułu.
+
+**Wymagania techniczne**:
+- Tytuł 50-65 znaków, zawiera keyword (zachęcający do klika, nie nudny)
+- Treść **1000-1500 słów**, markdown z H2/H3 sekcjami
+- Sekcja "Najczęstsze pytania (FAQ)" na końcu, 5-8 pytań w formacie `### Pytanie?` + odpowiedź
 - Meta description 140-160 znaków z CTA "Bezpłatna wycena" lub "Sprawdź ofertę"
-- W treści MINIMUM 1 wewnętrzny link do relevant /uslugi/* (np. [Wirtualna Centrala](https://actio.pl/uslugi/wirtualna-centrala/))
 - Język polski, ton ekspercki B2B, **bez emoji**
-- Slug: kebab-case, max 80 znaków, zawiera keyword
+- Slug: kebab-case, max 80 znaków, zawiera keyword (nie powielaj slugów z listy wyżej)
+
+**LINKI WEWNĘTRZNE (KRYTYCZNE – decyduje o SEO i UX)**:
+- **MIN 8 wewnętrznych linków** w treści (1 link / ~150 słów, mieszanka: usługi + CTA)
+- Format markdown: `[anchor text](https://actio.pl/...)`
+- **Anchor naturalny** (fraza z toku zdania, np. "wirtualną centralę telefoniczną", "kupić SIP Trunka", "skontaktuj się z naszym zespołem") — NIGDY "kliknij tutaj" / "więcej info"
+- ZAWSZE wstaw link przy PIERWSZYM wystąpieniu nazwy usługi w treści
+- Zakończ sekcją `## Sprawdź również` z 2-3 linkami do powiązanych usług + 1 wyraźnym CTA do `https://actio.pl/rejestracja/` ("Załóż konto i przetestuj — bezpłatna wycena, aktywacja w 24h")
+- Dodaj 1× link do `https://actio.pl/kontakt/` w treści (anchor typu "indywidualna wycena", "porozmawiaj z konsultantem", "skontaktuj się z zespołem")
+
+**LISTA USŁUG ACTIO z URL-ami** (używaj jako anchor targets — wybieraj te najlepiej pasujące do tematu):
+{_ACTIO_SERVICES_URLS}
 
 **Dostępne kategorie WP** (wybierz 1-2): {cat_names}
 **Tagi**: wybierz 5-10 polskich, lowercase, kebab-case (np. "wirtualna-centrala", "voip-dla-firm"){edit_block}
@@ -179,6 +291,30 @@ Output: **TYLKO czysty JSON, bez markdown code fence**, taki:
 - Bez markdown w odpowiedziach (plain text — będzie embedded w JSON-LD)
 - Pytania zaczynają się od "Czym", "Jak", "Czy", "Ile", "Dlaczego" itd.
 """
+
+
+def _extract_faq_from_md(content_md: str) -> list[dict]:
+    """Wyciągnij FAQ Q&A z markdown content (sekcja "Najczęstsze pytania" + H3 questions).
+
+    Fallback gdy LLM nie zwrócił pola schema_faqpage w JSON. Parsuje sekwencję:
+    `### Pytanie?\\n\\n<paragraf odpowiedzi>` od momentu nagłówka "Najczęstsze pytania" do końca.
+    """
+    if not content_md:
+        return []
+    idx = content_md.find("Najczęstsze pytania")
+    if idx < 0:
+        return []
+    faq_section = content_md[idx:]
+    # Match H3 question + paragraf(y) odpowiedzi aż do następnego H3 lub końca
+    pattern = re.compile(r"###\s+(.+?)\n+(.+?)(?=\n###\s|\Z)", re.DOTALL)
+    pairs = []
+    for m in pattern.finditer(faq_section):
+        q = m.group(1).strip()
+        a = re.sub(r"\s+", " ", m.group(2)).strip()
+        # Filtruj śmieci (np. tytuły sekcji niebędące pytaniami)
+        if q.endswith("?") and len(a) >= 30:
+            pairs.append({"q": q, "a": a})
+    return pairs
 
 
 def _parse_llm_output(raw: str) -> dict:
@@ -210,6 +346,9 @@ def _render_email_html(draft: dict, draft_id: int, token: str, parent_id: int | 
     cats = ", ".join(json.loads(draft["categories"]) if isinstance(draft["categories"], str) else draft["categories"])
     tags = ", ".join(json.loads(draft["tags"]) if isinstance(draft["tags"], str) else draft["tags"])
 
+    faq_items = json.loads(draft.get("schema_faqpage") or "[]")
+    faq_line = f"<strong>FAQ schema:</strong> {len(faq_items)} Q&A (dodane do mu-plugin po publish)<br>" if faq_items else ""
+
     parent_note = f"<p style='color:#888'><em>Regenerated from draft #{parent_id}</em></p>" if parent_id else ""
 
     btn_style = "display:inline-block;padding:12px 28px;margin:6px;border-radius:6px;text-decoration:none;font-weight:600;font-family:-apple-system,sans-serif;"
@@ -236,7 +375,7 @@ img {{ max-width: 100%; }}
 <strong>Meta description:</strong> {draft['meta_description']}<br>
 <strong>Kategorie:</strong> {cats}<br>
 <strong>Tagi:</strong> {tags}<br>
-</div>
+{faq_line}</div>
 
 <div class="actions">
   <p style="margin:0 0 16px 0;color:#666;font-size:14px"><strong>Status: oczekuje na Twoją decyzję.</strong> Post NIE zostanie opublikowany bez akceptacji.</p>
@@ -253,7 +392,8 @@ img {{ max-width: 100%; }}
 </div>
 
 <p style="color:#888;font-size:12px;margin-top:32px">
-Generated by Actio Marketing Autopost. Po akceptacji post idzie live na actio.pl — wycofać można w WP Admin → Posty (zmiana statusu na Draft).
+Generated by Actio Marketing Autopost. Po akceptacji post idzie live na actio.pl — wycofać można w WP Admin → Posty (zmiana statusu na Draft).<br>
+<strong>Reminder dla Toma</strong>: po publish autopublisher zaktualizował <code>handoff/actio-schema-mu-plugin.php</code> o nowy FAQ entry. Wgraj plik via FTP do <code>/wp-content/mu-plugins/</code> aby JSON-LD FAQPage zaczął się emitować.
 </p>
 </body></html>"""
 
@@ -362,11 +502,14 @@ def generate_draft() -> dict:
         "tags": json.dumps(parsed.get("tags", []), ensure_ascii=False),
         "image_path": img_path,
         "image_prompt": img_prompt if img_path else None,
-        "schema_faqpage": json.dumps(parsed.get("schema_faqpage", []), ensure_ascii=False),
+        "schema_faqpage": json.dumps(
+            parsed.get("schema_faqpage") or _extract_faq_from_md(parsed["content_md"]),
+            ensure_ascii=False,
+        ),
         "approval_token": token,
     }
     draft_id = db.insert_draft(db_path, draft_row)
-    print(f"Inserted draft #{draft_id}")
+    print(f"Inserted draft #{draft_id} (schema_faqpage: {len(json.loads(draft_row['schema_faqpage']))} Q&A)")
 
     print("=== Sending email ===")
     full_draft = db.fetch_draft(db_path, draft_id)
@@ -410,6 +553,10 @@ def regenerate_with_edits(parent_draft_id: int, edit_notes: str) -> dict:
         "tags": json.dumps(parsed.get("tags", []), ensure_ascii=False),
         "image_path": img_path,
         "image_prompt": parent["image_prompt"],
+        "schema_faqpage": json.dumps(
+            parsed.get("schema_faqpage") or _extract_faq_from_md(parsed["content_md"]),
+            ensure_ascii=False,
+        ),
         "approval_token": token,
         "parent_draft_id": parent_draft_id,
         "edit_notes": edit_notes,

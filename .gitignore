@@ -17,6 +17,9 @@ __pycache__/
 *.db-shm
 chainlit_data.db
 
+# PII exports (numery z formularzy / leady — NIGDY do gita)
+*_PII.csv
+
 # Logs & runtime artifacts
 logs/
 md-reports/
@@ -24,6 +27,13 @@ md-full/
 autopost_images/
 handoff/*
 !handoff/actio-schema-mu-plugin.php
+!handoff/gtm-conv-value-brief.md
+!handoff/gtm-registration-tracking-instrukcja.md
+!handoff/email-registration-template.html
+!handoff/email-konto-utworzone.html
+!handoff/email-zgloszenie-osticket.html
+!handoff/email-formularz-godziny-pracy.html
+!handoff/email-formularz-poza-godzinami.html
 handoff/*.bak.*
 .files/
 
@@ -45,6 +55,11 @@ img/
 # Playwright MCP runtime + ad-hoc screenshots
 .playwright-mcp/
 kontakt-full.png
+
+# Chainlit generowane assety (audio/wideo) + dev screenshoty panelu — nie do gita
+chainlit_assets/
+chainlit_videos/
+/*.png
 
 # Claude Code
 .claude/

@@ -437,6 +437,23 @@ def fetch_recent_published_keywords(path: str, days: int = 90) -> set[str]:
         return {r[0] for r in cur.fetchall()}
 
 
+def fetch_recent_published_topics(path: str, limit: int = 7) -> list[dict]:
+    """Ostatnie N opublikowanych/zatwierdzonych draftów z keyword+slug+title dla topic-overlap check.
+
+    Używane przez autopublish.pick_keyword() do unikania semantycznie tożsamych keywords
+    (np. "voip dla firm" / "telefonia voip" / "numer voip" mają wspólny core token).
+    """
+    with _connect(path) as conn:
+        cur = conn.execute(
+            """SELECT keyword, slug, title, published_at
+               FROM autopost_drafts
+               WHERE status IN ('published', 'approved')
+               ORDER BY id DESC LIMIT ?""",
+            (int(limit),),
+        )
+        return [{"keyword": r[0], "slug": r[1], "title": r[2], "published_at": r[3]} for r in cur.fetchall()]
+
+
 def fetch_lead_events_breakdown(path: str, days: int = 7, group_by: str = "lead_type") -> pd.DataFrame:
     """Breakdown generate_lead per wybranym wymiarem (lead_type/form_id/phone_number/link_location/form_location)."""
     allowed = {"lead_type", "form_id", "phone_number", "link_text", "link_location", "form_location", "source_medium"}

@@ -28,6 +28,7 @@ import autopublish
 SUBJECT_RE = re.compile(r"\[Actio Autopost #(\d+)(?:\s+v\d+)?(?:\s+\(regen\))?\]", re.IGNORECASE)
 OK_RE = re.compile(r"^\s*(OK|ok|Ok|oK)\s*$", re.IGNORECASE)
 EDIT_RE = re.compile(r"^\s*EDIT:\s*(.+)$", re.IGNORECASE | re.DOTALL)
+REJECT_RE = re.compile(r"^\s*(REJECT|reject|Reject|NO|no|No|nO)\s*$", re.IGNORECASE)
 
 
 def _env(key: str, default: str | None = None) -> str:
@@ -171,7 +172,7 @@ def check_and_process() -> list[dict]:
                 M.store(msg_id, "+FLAGS", "\\Seen")
                 continue
 
-            # Decide action
+            # Decide action – explicit only. Unknown first line = skip (zachowaj pending_approval).
             action = None
             edit_notes = None
             if OK_RE.match(first):
@@ -179,8 +180,13 @@ def check_and_process() -> list[dict]:
             elif EDIT_RE.match(first):
                 action = "edit"
                 edit_notes = EDIT_RE.match(first).group(1).strip()
-            else:
+            elif REJECT_RE.match(first):
                 action = "reject"
+            else:
+                # Nieznana pierwsza linia (autoresponder, quote, spam) – nie zmieniaj statusu, czekaj na manual action via webhook.
+                print(f"[mail_checker] draft #{draft_id} unknown first_line, skip (not marking token used). first='{first[:80]}'")
+                M.store(msg_id, "+FLAGS", "\\Seen")
+                continue
 
             # Mark token used
             db.update_draft(

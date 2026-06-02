@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel Klienta Actio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<style>
+:root{
+  --orange:#EE7F17; --orange-dark:#d96e0c; --orange-soft:#FEF1E6;
+  --bg:#F8F9FA; --card:#FFFFFF; --border:#E9ECEF; --border-soft:#F1F3F5;
+  --text:#2D2D3A; --muted:#6C757D; --link:#224DB7;
+  --green:#1E9E54; --green-soft:#E6F5EC; --red:#E03131; --red-soft:#FDECEC;
+  --radius:14px; --radius-sm:9px;
+  --shadow:0 1px 3px rgba(16,24,40,.06),0 1px 2px rgba(16,24,40,.04);
+  --shadow-md:0 4px 16px rgba(16,24,40,.08);
+  --sidebar-w:248px; --topbar-h:64px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:Mulish,system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;line-height:1.5}
+a{color:var(--link);text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none}
+.hidden{display:none!important}
+
+/* ---------- BUTTONS ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-size:15px;border-radius:var(--radius-sm);padding:12px 20px;transition:.15s}
+.btn-primary{background:var(--orange);color:#fff}
+.btn-primary:hover{background:var(--orange-dark)}
+.btn-ghost{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--bg)}
+.btn-block{width:100%}
+.btn-sm{padding:8px 14px;font-size:14px}
+
+/* ---------- LOGIN ---------- */
+#login-view{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px;
+  background:linear-gradient(180deg,#fff 0%,var(--bg) 100%)}
+.login-card{width:100%;max-width:420px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-md);padding:40px 34px}
+.login-logo{display:block;height:42px;margin:0 auto 26px}
+.login-card h1{font-size:22px;font-weight:800;text-align:center;margin-bottom:6px}
+.login-card .sub{text-align:center;color:var(--muted);font-size:14px;margin-bottom:28px}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:6px}
+.input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;font-size:15px;font-family:inherit;color:var(--text);transition:.15s}
+.input:focus{outline:none;border-color:var(--orange);background:#fff;box-shadow:0 0 0 3px var(--orange-soft)}
+.login-meta{display:flex;justify-content:space-between;align-items:center;margin-top:18px;font-size:13px}
+.login-err{background:var(--red-soft);color:var(--red);border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;font-weight:600;margin-bottom:16px;display:none}
+.login-foot{text-align:center;margin-top:26px;color:var(--muted);font-size:12px}
+.login-hint{text-align:center;margin-top:14px;font-size:12px;color:var(--muted);background:var(--orange-soft);border-radius:8px;padding:8px}
+
+/* ---------- APP SHELL ---------- */
+#app{display:none}
+.topbar{position:sticky;top:0;z-index:40;height:var(--topbar-h);background:#fff;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:14px;padding:0 20px}
+.topbar .logo{height:30px}
+.hamburger{display:none;background:none;font-size:24px;color:var(--text);padding:4px;border-radius:8px}
+.topbar-spacer{flex:1}
+.topbar-stats{display:flex;align-items:center;gap:22px}
+.tstat{font-size:13px;color:var(--muted);white-space:nowrap}
+.tstat b{color:var(--text);font-weight:700}
+.tstat .bal{color:var(--orange)}
+.user-chip{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:10px;cursor:pointer}
+.user-chip:hover{background:var(--bg)}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--orange-soft);color:var(--orange);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.user-chip .uname{font-size:13px;font-weight:700}
+.user-chip .unum{font-size:12px;color:var(--muted)}
+.user-menu-wrap{position:relative}
+.user-dropdown{position:absolute;right:0;top:calc(100% + 8px);background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-md);min-width:240px;padding:8px;display:none;z-index:60}
+.user-dropdown.open{display:block}
+.ud-head{display:flex;align-items:center;gap:11px;padding:8px 10px 12px;border-bottom:1px solid var(--border-soft);margin-bottom:6px}
+.ud-item{display:flex;align-items:center;gap:12px;padding:10px;border-radius:8px;color:var(--text);font-weight:600;font-size:14px;cursor:pointer;text-decoration:none}
+.ud-item i{font-size:17px;color:var(--muted);width:18px;text-align:center}
+.ud-item:hover{background:var(--bg)}
+.ud-danger{color:var(--red)} .ud-danger i{color:var(--red)}
+.ud-sep{height:1px;background:var(--border-soft);margin:6px 0}
+
+.layout{display:flex;min-height:calc(100dvh - var(--topbar-h))}
+.sidebar{width:var(--sidebar-w);background:#fff;border-right:1px solid var(--border);padding:18px 14px;flex-shrink:0;
+  position:sticky;top:var(--topbar-h);height:calc(100dvh - var(--topbar-h));overflow-y:auto}
+.nav-group{margin-bottom:18px}
+.nav-label{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#9AA0A6;padding:0 12px;margin-bottom:8px}
+.nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;color:var(--text);font-weight:600;font-size:14.5px;cursor:pointer;transition:.12s;margin-bottom:2px}
+.nav-item i{font-size:18px;color:var(--muted);width:20px;text-align:center}
+.nav-item:hover{background:var(--bg)}
+.nav-item.active{background:var(--orange-soft);color:var(--orange-dark)}
+.nav-item.active i{color:var(--orange)}
+
+.main{flex:1;padding:28px 32px;max-width:100%;overflow-x:hidden}
+.page-head{margin-bottom:22px}
+.page-head h2{font-size:24px;font-weight:800}
+.page-head p{color:var(--muted);font-size:14px;margin-top:3px}
+
+/* ---------- CARDS ---------- */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px 24px;margin-bottom:20px}
+.card-title{font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#9AA0A6;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.grid{display:grid;gap:20px}
+.grid-3{grid-template-columns:repeat(3,1fr)}
+.grid-2{grid-template-columns:repeat(2,1fr)}
+
+/* stat tiles */
+.stat-tile{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px;display:flex;align-items:center;gap:16px}
+.stat-ico{width:46px;height:46px;border-radius:12px;background:var(--orange-soft);color:var(--orange);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.stat-tile .lbl{font-size:12.5px;color:var(--muted);font-weight:600}
+.stat-tile .val{font-size:20px;font-weight:800;margin-top:2px}
+
+/* status banner */
+.status-card{display:flex;align-items:center;gap:18px}
+.status-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;padding:5px 12px;border-radius:999px}
+.badge-red{background:var(--red-soft);color:var(--red)}
+.badge-green{background:var(--green-soft);color:var(--green)}
+
+/* definition rows */
+.drow{display:flex;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--border-soft);font-size:15px}
+.drow:last-child{border-bottom:none}
+.drow .k{color:var(--muted)}
+.drow .v{font-weight:600;text-align:right}
+
+/* toggle */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border-soft)}
+.toggle-row:last-child{border-bottom:none}
+.toggle-row .t-label{font-weight:600}
+.toggle-row .t-desc{font-size:13px;color:var(--muted);margin-top:2px}
+.switch{position:relative;width:46px;height:26px;flex-shrink:0}
+.switch input{opacity:0;width:0;height:0}
+.slider{position:absolute;inset:0;background:#CED4DA;border-radius:999px;transition:.2s}
+.slider:before{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.switch input:checked+.slider{background:var(--orange)}
+.switch input:checked+.slider:before{transform:translateX(20px)}
+
+/* tables */
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{text-align:left;font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#9AA0A6;padding:0 14px 12px;border-bottom:1px solid var(--border)}
+.tbl td{padding:14px;border-bottom:1px solid var(--border-soft)}
+.tbl tr:last-child td{border-bottom:none}
+.tbl .num{font-variant-numeric:tabular-nums}
+.dir{display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:13px}
+.dir-in{color:var(--green)} .dir-out{color:var(--link)}
+.amt-plus{color:var(--green);font-weight:700} .amt-minus{color:var(--text);font-weight:700}
+.tbl-cards{display:none}
+
+/* helper */
+.help-box{background:var(--orange-soft);border-radius:var(--radius-sm);padding:14px 16px;font-size:13.5px;color:#8a5418;display:flex;gap:10px;align-items:flex-start}
+.help-box i{color:var(--orange);font-size:17px;margin-top:1px}
+.fld-label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:8px}
+.token-box{background:#2D2D3A;border-radius:var(--radius-sm);padding:16px 18px;min-height:56px;display:flex;align-items:center}
+.token-box code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:15.5px;color:#FFD9A8;word-break:break-all;line-height:1.6;letter-spacing:.4px}
+.token-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:14px}
+.doc-link{display:inline-flex;align-items:center;gap:7px;font-weight:700;font-size:14px;color:var(--link);padding:9px 13px;border-radius:var(--radius-sm);transition:.12s;margin-left:auto}
+.doc-link:hover{background:#EEF2FB}
+.btn.copied{background:var(--green)}
+.search-bar{display:flex;align-items:center;gap:10px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0 14px;margin-bottom:18px;transition:.15s}
+.search-bar:focus-within{border-color:var(--orange);background:#fff;box-shadow:0 0 0 3px var(--orange-soft)}
+.search-bar i{color:var(--muted);font-size:17px;flex-shrink:0}
+.search-input{flex:1;background:none;border:none;outline:none;padding:12px 0;font-size:15px;font-family:inherit;color:var(--text);min-width:0}
+.search-count{font-size:12.5px;color:var(--muted);white-space:nowrap}
+.no-res{text-align:center;color:var(--muted);padding:28px 0;font-size:14px}
+.row-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.muted{color:var(--muted);font-size:13px}
+.mt{margin-top:16px}
+
+/* overlay for mobile drawer */
+.overlay{display:none;position:fixed;inset:0;background:rgba(16,24,40,.4);z-index:45}
+
+/* alert banner */
+.banner{display:flex;align-items:center;gap:14px;border-radius:var(--radius);padding:16px 20px;margin-bottom:20px}
+.banner-warn{background:#FFF6E6;border:1px solid #FFE0A3}
+.banner>i{font-size:22px;color:var(--orange);flex-shrink:0}
+.banner .b-txt{flex:1}
+.banner .b-txt b{display:block;font-size:15px}
+.banner .b-txt span{font-size:13px;color:var(--muted)}
+.banner-x{background:none;color:var(--muted);font-size:15px;padding:7px;border-radius:8px;line-height:1;flex-shrink:0}
+.banner-x:hover{background:rgba(0,0,0,.06);color:var(--text)}
+
+/* month mini stats */
+.month-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.mstat{text-align:center;padding:6px 4px}
+.mstat i{font-size:20px;color:var(--orange);display:block;margin-bottom:6px}
+.mstat .mv{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+.mstat .ml{font-size:12px;color:var(--muted);font-weight:600}
+
+/* balance tile with action */
+.bal-actions{margin-left:auto}
+
+/* notification bell */
+.bell-wrap{position:relative}
+.bell-btn{background:none;position:relative;width:40px;height:40px;border-radius:10px;color:var(--muted);font-size:20px;display:flex;align-items:center;justify-content:center}
+.bell-btn:hover{background:var(--bg)}
+.bell-badge{position:absolute;top:5px;right:5px;background:var(--red);color:#fff;font-size:10px;font-weight:800;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 3px}
+.notif-dd{position:absolute;right:0;top:calc(100% + 8px);width:320px;max-width:88vw;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-md);padding:8px;display:none;z-index:60}
+.notif-dd.open{display:block}
+.notif-dd .nd-head{font-weight:800;font-size:14px;padding:8px 10px}
+.notif{display:flex;gap:11px;padding:11px 10px;border-radius:8px;cursor:pointer}
+.notif:hover{background:var(--bg)}
+.notif .ni{width:34px;height:34px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px}
+.ni-warn{background:var(--orange-soft);color:var(--orange)} .ni-info{background:#EAF1FB;color:var(--link)} .ni-ok{background:var(--green-soft);color:var(--green)}
+.notif .nt{font-size:13.5px;font-weight:600;line-height:1.35}
+.notif .ntm{font-size:12px;color:var(--muted);margin-top:2px}
+
+/* floating BOK */
+.fab-wrap{position:fixed;right:24px;bottom:24px;z-index:55;display:flex;flex-direction:column;align-items:flex-end;gap:12px}
+.fab-menu{display:flex;flex-direction:column;gap:10px;align-items:flex-end;opacity:0;transform:translateY(10px) scale(.96);pointer-events:none;transition:.18s}
+.fab-wrap.open .fab-menu{opacity:1;transform:none;pointer-events:auto}
+.fab-item{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--border);box-shadow:var(--shadow-md);border-radius:999px;padding:10px 16px 10px 14px;font-weight:700;font-size:14px;color:var(--text);text-decoration:none}
+.fab-item:hover{background:var(--bg)}
+.fab-item i{color:var(--orange);font-size:17px}
+.fab{width:58px;height:58px;border-radius:50%;background:var(--orange);color:#fff;font-size:25px;box-shadow:0 6px 20px rgba(238,127,23,.45);display:flex;align-items:center;justify-content:center;transition:.18s}
+.fab:hover{background:var(--orange-dark)}
+.fab-wrap.open .fab{transform:scale(1.06)}
+.fab-wrap.open .fab i:before{content:"\F62A"}
+
+/* config / QR */
+.cfg-grid{display:grid;grid-template-columns:190px 1fr;gap:26px;align-items:start}
+.qr-box{text-align:center}
+.qr-box img{width:170px;height:170px;border:1px solid var(--border);border-radius:12px;padding:8px;background:#fff}
+.qr-box .qr-cap{font-size:12.5px;color:var(--muted);margin-top:10px}
+.cfg-cred{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:4px 16px;margin-bottom:16px}
+.steps{counter-reset:s;list-style:none}
+.steps li{position:relative;padding:8px 0 8px 38px;font-size:14.5px}
+.steps li:before{counter-increment:s;content:counter(s);position:absolute;left:0;top:7px;width:25px;height:25px;border-radius:50%;background:var(--orange-soft);color:var(--orange-dark);font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center}
+.app-links{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+.app-chip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:10px;padding:9px 14px;font-weight:700;font-size:14px;color:var(--text)}
+.app-chip:hover{background:var(--bg)}
+
+/* invoices */
+.inv-status{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px}
+.inv-paid{background:var(--green-soft);color:var(--green)} .inv-due{background:#FFF6E6;color:#B7791F}
+
+/* cross-sell */
+.xsell-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.xsell{border:1px solid var(--border);border-radius:var(--radius);padding:18px;transition:.15s}
+.xsell:hover{border-color:var(--orange);box-shadow:var(--shadow-md)}
+.xsell i{font-size:24px;color:var(--orange)}
+.xsell h4{font-size:16px;font-weight:800;margin:10px 0 4px}
+.xsell p{font-size:13px;color:var(--muted);margin-bottom:14px}
+.xsell a{font-weight:700;font-size:14px}
+
+/* modal */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(16,24,40,.5);z-index:70;align-items:center;justify-content:center;padding:20px}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:var(--radius);width:100%;max-width:440px;padding:26px;box-shadow:var(--shadow-md)}
+.modal h3{font-size:19px;font-weight:800;margin-bottom:4px}
+.modal .m-sub{color:var(--muted);font-size:14px;margin-bottom:20px}
+.amt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+.amt-opt{border:1.5px solid var(--border);border-radius:10px;padding:14px 0;text-align:center;font-weight:800;font-size:16px;cursor:pointer;transition:.12s}
+.amt-opt:hover{border-color:var(--orange)}
+.amt-opt.sel{border-color:var(--orange);background:var(--orange-soft);color:var(--orange-dark)}
+.modal-x{float:right;background:none;font-size:22px;color:var(--muted);line-height:1;margin:-6px -6px 0 0}
+
+/* ---------- RESPONSIVE ---------- */
+@media(max-width:1024px){
+  .grid-3{grid-template-columns:1fr 1fr}
+  .main{padding:24px 22px}
+}
+@media(max-width:768px){
+  .hamburger{display:block}
+  .topbar-stats{display:none}
+  .topbar .user-chip .uinfo{display:none}
+  .sidebar{position:fixed;top:0;left:0;height:100dvh;z-index:50;transform:translateX(-100%);transition:transform .25s;box-shadow:var(--shadow-md);padding-top:16px}
+  body.drawer-open .sidebar{transform:translateX(0)}
+  body.drawer-open .overlay{display:block}
+  .sidebar .side-logo{display:flex;align-items:center;gap:10px;padding:6px 12px 18px;margin-bottom:6px;border-bottom:1px solid var(--border)}
+  .sidebar .side-logo img{height:26px}
+  .sidebar .side-stats{padding:14px 12px;margin:6px 0 12px;background:var(--bg);border-radius:10px;font-size:13px}
+  .sidebar .side-stats div{display:flex;justify-content:space-between;padding:3px 0}
+  .main{padding:18px 16px}
+  .grid-3,.grid-2,.row-2{grid-template-columns:1fr}
+  .month-grid{grid-template-columns:repeat(2,1fr);gap:18px 10px}
+  .cfg-grid{grid-template-columns:1fr;gap:20px}
+  .xsell-grid{grid-template-columns:1fr}
+  .fab-wrap{right:16px;bottom:16px}
+  .card{padding:18px 16px}
+  .page-head h2{font-size:21px}
+  /* tables -> cards */
+  .tbl{display:none}
+  .tbl-cards{display:block}
+  .rec{border:1px solid var(--border-soft);border-radius:10px;padding:13px 14px;margin-bottom:10px}
+  .rec-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .rec-sub{font-size:12.5px;color:var(--muted);display:flex;justify-content:space-between}
+}
+@media(min-width:769px){ .sidebar .side-logo,.sidebar .side-stats{display:none} }
+</style>
+</head>
+<body>
+
+<!-- ===================== LOGIN ===================== -->
+<div id="login-view">
+  <form class="login-card" id="login-form" autocomplete="off">
+    <img src="assets/actio-logo.webp" alt="Actio" class="login-logo">
+    <h1>Witaj w panelu Actio</h1>
+    <p class="sub">Zaloguj się, aby zarządzać swoim numerem</p>
+    <div class="login-err" id="login-err"><i class="bi bi-exclamation-circle"></i> Nieprawidłowy login lub hasło.</div>
+    <div class="field">
+      <label>Nazwa użytkownika</label>
+      <input class="input" id="li-user" placeholder="np. 48 500 600 700" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>Hasło</label>
+      <input class="input" id="li-pass" type="password" placeholder="Twoje hasło" autocomplete="current-password">
+    </div>
+    <button type="submit" class="btn btn-primary btn-block" style="margin-top:8px">Zaloguj się</button>
+    <div class="login-meta">
+      <a href="#">Nie pamiętam hasła</a>
+      <span class="muted">Polski</span>
+    </div>
+    <div class="login-hint">Demo: login <b>test</b> · hasło <b>test123</b></div>
+    <div class="login-foot">Połączenie szyfrowane SSL · Actio / SYNTELL S.A.</div>
+  </form>
+</div>
+
+<!-- ===================== APP ===================== -->
+<div id="app">
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <button class="hamburger" id="hamburger" aria-label="Menu"><i class="bi bi-list"></i></button>
+    <img src="assets/actio-logo.webp" alt="Actio" class="logo">
+    <div class="topbar-spacer"></div>
+    <div class="topbar-stats">
+      <span class="tstat">Stan konta: <b class="bal">9,26 zł</b></span>
+      <span class="tstat">Taryfa: <b>actio SIP MOBILE</b></span>
+    </div>
+    <div class="bell-wrap">
+      <button class="bell-btn" onclick="toggleNotif(event)" aria-label="Powiadomienia"><i class="bi bi-bell"></i><span class="bell-badge">3</span></button>
+      <div class="notif-dd" id="notif-dd">
+        <div class="nd-head">Powiadomienia</div>
+        <div class="notif"><div class="ni ni-warn"><i class="bi bi-exclamation-triangle"></i></div><div><div class="nt">Niskie saldo: 9,26 zł</div><div class="ntm">Doładuj, aby uniknąć przerwy w usłudze · dziś</div></div></div>
+        <div class="notif"><div class="ni ni-info"><i class="bi bi-voicemail"></i></div><div><div class="nt">Nowa wiadomość głosowa</div><div class="ntm">Od 48 690 672 521 · 2 godz. temu</div></div></div>
+        <div class="notif"><div class="ni ni-ok"><i class="bi bi-receipt"></i></div><div><div class="nt">Faktura 05/2026 gotowa</div><div class="ntm">Do pobrania · 28.05.2026</div></div></div>
+      </div>
+    </div>
+    <div class="user-menu-wrap">
+      <div class="user-chip" id="user-chip" onclick="toggleUserMenu(event)">
+        <div class="avatar">JK</div>
+        <div class="uinfo">
+          <div class="uname">Jan Kowalski</div>
+          <div class="unum">48 457 110 101</div>
+        </div>
+        <i class="bi bi-chevron-down muted" style="font-size:13px"></i>
+      </div>
+      <div class="user-dropdown" id="user-dropdown">
+        <div class="ud-head">
+          <div class="avatar">JK</div>
+          <div><div class="uname">Jan Kowalski</div><div class="unum">48 457 110 101</div></div>
+        </div>
+        <div class="ud-item" onclick="go('info')"><i class="bi bi-person"></i> Moje konto</div>
+        <div class="ud-item" onclick="go('password')"><i class="bi bi-shield-lock"></i> Zmiana hasła</div>
+        <a class="ud-item" href="https://actio.pl/kontakt/?utm_source=panel&utm_medium=menu&utm_campaign=pomoc" target="_blank" rel="noopener"><i class="bi bi-headset"></i> Pomoc / BOK</a>
+        <div class="ud-sep"></div>
+        <div class="ud-item ud-danger" onclick="logout()"><i class="bi bi-box-arrow-right"></i> Wyloguj</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="overlay" id="overlay"></div>
+
+  <div class="layout">
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="side-logo"><img src="assets/actio-logo.webp" alt="Actio"></div>
+      <div class="side-stats">
+        <div><span class="muted">Stan konta</span><b style="color:var(--orange)">9,26 zł</b></div>
+        <div><span class="muted">Taryfa</span><b>actio SIP MOBILE</b></div>
+        <div><span class="muted">Numer</span><b>48 457 110 101</b></div>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-item active" data-view="info"><i class="bi bi-grid-1x2"></i> Informacje</div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-label">Opcje numeru</div>
+        <div class="nav-item" data-view="config"><i class="bi bi-phone-vibrate"></i> Konfiguracja</div>
+        <div class="nav-item" data-view="voicemail"><i class="bi bi-voicemail"></i> Poczta głosowa</div>
+        <div class="nav-item" data-view="forward"><i class="bi bi-arrow-left-right"></i> Przekierowanie</div>
+        <div class="nav-item" data-view="sms"><i class="bi bi-chat-dots"></i> Ustawienia SMS</div>
+        <div class="nav-item" data-view="gateway"><i class="bi bi-hdd-network"></i> Bramka SMS</div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-label">Historia i rozliczenia</div>
+        <div class="nav-item" data-view="calls"><i class="bi bi-telephone"></i> Historia połączeń</div>
+        <div class="nav-item" data-view="trans"><i class="bi bi-receipt"></i> Historia transakcji</div>
+        <div class="nav-item" data-view="invoices"><i class="bi bi-file-earmark-text"></i> Faktury</div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-label">Ustawienia</div>
+        <div class="nav-item" data-view="password"><i class="bi bi-shield-lock"></i> Zmiana hasła</div>
+        <div class="nav-item" data-view="logout"><i class="bi bi-box-arrow-right"></i> Wyloguj</div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main" id="main"><!-- views injected --></main>
+  </div>
+
+  <!-- Floating BOK -->
+  <div class="fab-wrap" id="fab-wrap">
+    <div class="fab-menu">
+      <a class="fab-item" href="tel:+48616489000"><i class="bi bi-headset"></i> Zadzwoń do BOK</a>
+      <a class="fab-item" href="tel:+48616489009"><i class="bi bi-tools"></i> Pomoc techniczna</a>
+      <a class="fab-item" href="https://actio.pl/kontakt/?utm_source=panel&utm_medium=fab&utm_campaign=zgloszenie" target="_blank" rel="noopener"><i class="bi bi-ticket-detailed"></i> Wystaw zgłoszenie</a>
+    </div>
+    <button class="fab" onclick="toggleFab(event)" aria-label="Kontakt z BOK"><i class="bi bi-headset"></i></button>
+  </div>
+
+  <!-- Top-up modal -->
+  <div class="modal-bg" id="topup-modal">
+    <div class="modal">
+      <button class="modal-x" onclick="closeTopup()">&times;</button>
+      <h3>Doładuj konto</h3>
+      <p class="m-sub">Wybierz kwotę. Środki dostępne natychmiast.</p>
+      <div class="amt-grid">
+        <div class="amt-opt" onclick="selAmt(this,20)">20 zł</div>
+        <div class="amt-opt sel" onclick="selAmt(this,50)">50 zł</div>
+        <div class="amt-opt" onclick="selAmt(this,100)">100 zł</div>
+      </div>
+      <div class="field"><label>Metoda płatności</label>
+        <select class="input"><option>BLIK</option><option>Karta płatnicza</option><option>Przelew online (Przelewy24)</option></select>
+      </div>
+      <button class="btn btn-primary btn-block mt" onclick="closeTopup()">Doładuj <span id="amt-val">50</span> zł</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const NUM = "48 457 110 101";
+// ---------- mock data ----------
+const CALLS = [
+  ["28.05.2026 14:51","48 690 672 521","in","2:14","–"],
+  ["28.05.2026 11:03","48 22 285 10 39","out","0:48","0,12 zł"],
+  ["27.05.2026 16:22","48 61 648 90 00","in","5:31","–"],
+  ["27.05.2026 09:10","48 500 120 340","out","1:05","0,15 zł"],
+  ["26.05.2026 18:44","48 666 008 257","in","0:22","–"],
+  ["25.05.2026 12:30","48 71 300 22 11","out","3:50","0,42 zł"],
+];
+const TRANS = [
+  ["28.05.2026","Opłata miesięczna – numer komórkowy","-10,00 zł","9,26 zł"],
+  ["28.05.2026","Doładowanie konta","+20,00 zł","19,26 zł"],
+  ["15.05.2026","Pakiet SMS 100","-5,00 zł","-0,74 zł"],
+  ["01.05.2026","Opłata miesięczna – numer komórkowy","-10,00 zł","4,26 zł"],
+];
+
+// ---------- views ----------
+const V = {};
+V.info = ()=>`
+  <div class="page-head"><h2>Informacje</h2><p>Status Twojego numeru i konta</p></div>
+  ${sessionStorage.getItem('actio_banner_dismissed')?'':`
+  <div class="banner banner-warn" id="lowbal-banner">
+    <i class="bi bi-exclamation-triangle-fill"></i>
+    <div class="b-txt"><b>Niskie saldo: 9,26 zł</b><span>Doładuj konto, aby uniknąć przerwy w działaniu numeru.</span></div>
+    <button class="btn btn-primary btn-sm" onclick="openTopup()"><i class="bi bi-plus-lg"></i> Doładuj</button>
+    <button class="banner-x" onclick="dismissBanner()" aria-label="Zamknij"><i class="bi bi-x-lg"></i></button>
+  </div>`}
+  <div class="grid grid-3" style="margin-bottom:20px">
+    <div class="stat-tile"><div class="stat-ico"><i class="bi bi-wallet2"></i></div><div><div class="lbl">Stan konta</div><div class="val">9,26 zł</div></div><div class="bal-actions"><button class="btn btn-ghost btn-sm" onclick="openTopup()">Doładuj</button></div></div>
+    <div class="stat-tile"><div class="stat-ico"><i class="bi bi-phone"></i></div><div><div class="lbl">Twój numer</div><div class="val">${NUM}</div></div></div>
+    <div class="stat-tile"><div class="stat-ico"><i class="bi bi-star"></i></div><div><div class="lbl">Taryfa</div><div class="val" style="font-size:17px">actio SIP MOBILE</div></div></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><i class="bi bi-graph-up"></i> Ten miesiąc</div>
+    <div class="month-grid">
+      <div class="mstat"><i class="bi bi-telephone"></i><div class="mv">47</div><div class="ml">Połączenia</div></div>
+      <div class="mstat"><i class="bi bi-chat-dots"></i><div class="mv">128</div><div class="ml">SMS-y</div></div>
+      <div class="mstat"><i class="bi bi-clock"></i><div class="mv">213</div><div class="ml">Minuty</div></div>
+      <div class="mstat"><i class="bi bi-cash-stack"></i><div class="mv">34,20</div><div class="ml">Koszt (zł)</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><i class="bi bi-broadcast"></i> Status usługi</div>
+    <div class="status-card">
+      <div>
+        <div style="font-weight:700;font-size:16px;margin-bottom:6px">Rejestracja urządzenia</div>
+        <div class="muted">Twój numer nie jest obecnie zarejestrowany na żadnym urządzeniu.</div>
+      </div>
+      <div style="margin-left:auto"><span class="badge badge-red"><i class="bi bi-x-circle-fill"></i> Niezarejestrowany</span></div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px">
+      <button class="btn btn-primary btn-sm" onclick="go('config')"><i class="bi bi-phone-vibrate"></i> Skonfiguruj urządzenie</button>
+      <button class="btn btn-ghost btn-sm" onclick="toggleFab(event)"><i class="bi bi-headset"></i> Pomoc BOK</button>
+    </div>
+  </div>
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-title"><i class="bi bi-person-vcard"></i> Dane abonenta</div>
+      <div class="drow"><span class="k">Imię i nazwisko</span><span class="v">Jan Kowalski</span></div>
+      <div class="drow"><span class="k">Adres e-mail</span><span class="v">jan.kowalski@firma.pl</span></div>
+      <div class="drow"><span class="k">Telefon kontaktowy</span><span class="v">48 600 123 456</span></div>
+      <div class="drow"><span class="k">Adres</span><span class="v">ul. Przykładowa 1, Poznań</span></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="bi bi-cash-coin"></i> Opłaty numeru</div>
+      <div class="drow"><span class="k">Numer komórkowy (mies.)</span><span class="v">10,00 zł</span></div>
+      <div class="drow"><span class="k">Połączenia krajowe</span><span class="v">0,15 zł / min</span></div>
+      <div class="drow"><span class="k">SMS krajowy</span><span class="v">0,12 zł</span></div>
+      <div class="drow"><span class="k">Najbliższe rozliczenie</span><span class="v">01.06.2026</span></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><i class="bi bi-stars"></i> Rozszerz usługę</div>
+    <div class="xsell-grid">
+      <div class="xsell"><i class="bi bi-telephone-plus"></i><h4>Dodaj numer</h4><p>Kolejny numer komórkowy lub stacjonarny w tej samej taryfie.</p><a href="https://actio.pl/uslugi/wirtualny-numer-komorkowy-voip/?utm_source=panel&utm_medium=xsell&utm_campaign=dodaj_numer" target="_blank" rel="noopener">Zamów →</a></div>
+      <div class="xsell"><i class="bi bi-chat-square-text"></i><h4>Pakiet SMS</h4><p>100 lub 500 SMS w niższej cenie za sztukę.</p><a href="https://actio.pl/uslugi/sms-przez-voip/?utm_source=panel&utm_medium=xsell&utm_campaign=pakiet_sms" target="_blank" rel="noopener">Wybierz pakiet →</a></div>
+      <div class="xsell"><i class="bi bi-arrow-up-circle"></i><h4>Wyższa taryfa</h4><p>Więcej minut i SMS, integracja z centralą 3CX.</p><a href="https://actio.pl/cennik/?utm_source=panel&utm_medium=xsell&utm_campaign=wyzsza_taryfa" target="_blank" rel="noopener">Porównaj →</a></div>
+    </div>
+  </div>`;
+
+V.voicemail = ()=>`
+  <div class="page-head"><h2>Poczta głosowa</h2><p>Odbieraj wiadomości głosowe gdy nie możesz odebrać</p></div>
+  <div class="card">
+    <div class="card-title"><i class="bi bi-gear"></i> Ustawienia</div>
+    <div class="toggle-row"><div><div class="t-label">Poczta głosowa</div><div class="t-desc">Włącz nagrywanie wiadomości</div></div><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+    <div class="toggle-row"><div><div class="t-label">Powiadomienia e-mail</div><div class="t-desc">Wyślij nagranie na e-mail</div></div><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+    <div class="toggle-row"><div><div class="t-label">Powiadomienie SMS</div><div class="t-desc">SMS o nowej wiadomości</div></div><label class="switch"><input type="checkbox"><span class="slider"></span></label></div>
+    <div class="field mt"><label>E-mail do powiadomień</label><input class="input" value="jan.kowalski@firma.pl"></div>
+    <button class="btn btn-primary mt">Zapisz zmiany</button>
+  </div>`;
+
+V.forward = ()=>`
+  <div class="page-head"><h2>Przekierowanie połączeń</h2><p>Ustaw reguły przekierowań dla swojego numeru</p></div>
+  <div class="card">
+    <div class="card-title"><i class="bi bi-arrow-left-right"></i> Reguły</div>
+    <div class="toggle-row"><div><div class="t-label">Zawsze przekierowuj</div><div class="t-desc">Wszystkie połączenia na inny numer</div></div><label class="switch"><input type="checkbox"><span class="slider"></span></label></div>
+    <div class="field mt"><label>Numer docelowy (zawsze)</label><input class="input" placeholder="np. 48 600 000 000"></div>
+    <hr style="border:none;border-top:1px solid var(--border-soft);margin:18px 0">
+    <div class="toggle-row"><div><div class="t-label">Gdy zajęty</div><div class="t-desc">Przekieruj gdy linia zajęta</div></div><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+    <div class="toggle-row"><div><div class="t-label">Brak odpowiedzi</div><div class="t-desc">Przekieruj po 20s</div></div><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+    <div class="field mt"><label>Numer docelowy (zajęty / brak odp.)</label><input class="input" value="48 61 648 90 00"></div>
+    <button class="btn btn-primary mt">Zapisz zmiany</button>
+  </div>`;
+
+V.sms = ()=>`
+  <div class="page-head"><h2>Ustawienia SMS</h2><p>Konfiguracja wysyłki i odbioru wiadomości SMS</p></div>
+  <div class="card">
+    <div class="card-title"><i class="bi bi-chat-dots"></i> Wiadomości</div>
+    <div class="toggle-row"><div><div class="t-label">Odbiór SMS</div><div class="t-desc">Pozwól odbierać wiadomości na numer</div></div><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+    <div class="toggle-row"><div><div class="t-label">Przekazywanie na e-mail</div><div class="t-desc">Kopia każdego SMS na e-mail</div></div><label class="switch"><input type="checkbox"><span class="slider"></span></label></div>
+    <div class="field mt"><label>Nazwa nadawcy (alfanumeryczna)</label><input class="input" value="ACTIO" maxlength="11"><div class="muted mt" style="margin-top:6px">Maks. 11 znaków. Wymaga weryfikacji u operatora.</div></div>
+    <button class="btn btn-primary mt">Zapisz zmiany</button>
+  </div>`;
+
+V.gateway = ()=>`
+  <div class="page-head"><h2>Bramka SMS (API)</h2><p>Wysyłaj SMS-y programowo przez REST API Actio</p></div>
+  <div class="card">
+    <div class="card-title"><i class="bi bi-key"></i> Token dostępowy</div>
+    <label class="fld-label">Twój token API</label>
+    <div class="token-box"><code id="apitok">aK7mP2xQ9wL4vB8nT5rZ3yH6eD1cF0gJ</code></div>
+    <div class="token-actions">
+      <button class="btn btn-primary btn-sm" id="btn-copy" onclick="copyToken()"><i class="bi bi-clipboard"></i> <span>Kopiuj token</span></button>
+      <button class="btn btn-ghost btn-sm" onclick="regenToken()"><i class="bi bi-arrow-repeat"></i> Wygeneruj nowy</button>
+      <a class="doc-link" href="https://actio.pl/wp-content/uploads/2026/05/ACTIO_SMS_API.pdf" target="_blank" rel="noopener"><i class="bi bi-file-earmark-text"></i> Dokumentacja API <i class="bi bi-box-arrow-up-right" style="font-size:11px"></i></a>
+    </div>
+    <div class="help-box mt"><i class="bi bi-info-circle-fill"></i><div>Endpoint: <b>POST https://msg-api.actio.pl/api/sms</b> · Autoryzacja: <code>Bearer &lt;token&gt;</code> · Pola: from, to, body.</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><i class="bi bi-send"></i> Szybki test</div>
+    <div class="row-2"><div class="field"><label>Nadawca (from)</label><input class="input" value="48 457 110 101"></div>
+    <div class="field"><label>Odbiorca (to)</label><input class="input" placeholder="48 600 000 000"></div></div>
+    <div class="field"><label>Treść</label><input class="input" placeholder="Treść wiadomości…"></div>
+    <button class="btn btn-primary">Wyślij SMS testowy</button>
+  </div>`;
+
+function callRows(L){return L.map(c=>`<tr><td class="num">${c[0]}</td><td class="num">${c[1]}</td>
+  <td><span class="dir ${c[2]==='in'?'dir-in':'dir-out'}"><i class="bi ${c[2]==='in'?'bi-arrow-down-left':'bi-arrow-up-right'}"></i>${c[2]==='in'?'Przych.':'Wych.'}</span></td>
+  <td class="num">${c[3]}</td><td class="num">${c[4]}</td></tr>`).join('')}
+function callCards(L){return L.map(c=>`<div class="rec"><div class="rec-top"><b class="num">${c[1]}</b>
+  <span class="dir ${c[2]==='in'?'dir-in':'dir-out'}"><i class="bi ${c[2]==='in'?'bi-arrow-down-left':'bi-arrow-up-right'}"></i>${c[2]==='in'?'Przych.':'Wych.'}</span></div>
+  <div class="rec-sub"><span>${c[0]}</span><span>${c[3]} · ${c[4]}</span></div></div>`).join('')}
+function filterCalls(q){
+  q=(q||'').toLowerCase().trim();
+  const L=CALLS.filter(c=>!q||(c[0]+' '+c[1]+' '+(c[2]==='in'?'przychodzące przych':'wychodzące wych')+' '+c[3]+' '+c[4]).toLowerCase().includes(q));
+  document.getElementById('calls-tbody').innerHTML = L.length?callRows(L):`<tr><td colspan="5" class="no-res">Brak wyników dla „${q}"</td></tr>`;
+  document.getElementById('calls-cards').innerHTML = L.length?callCards(L):`<div class="no-res">Brak wyników</div>`;
+  document.getElementById('calls-count').textContent = `${L.length} z ${CALLS.length}`;
+}
+V.calls = ()=>`
+  <div class="page-head"><h2>Historia połączeń</h2><p>Ostatnie połączenia przychodzące i wychodzące</p></div>
+  <div class="card">
+    <div class="search-bar"><i class="bi bi-search"></i><input class="search-input" placeholder="Szukaj po numerze, dacie, kierunku…" oninput="filterCalls(this.value)" autofocus><span class="search-count" id="calls-count">${CALLS.length} z ${CALLS.length}</span></div>
+    <table class="tbl">
+      <thead><tr><th>Data</th><th>Numer</th><th>Kierunek</th><th>Czas</th><th>Koszt</th></tr></thead>
+      <tbody id="calls-tbody">${callRows(CALLS)}</tbody>
+    </table>
+    <div class="tbl-cards" id="calls-cards">${callCards(CALLS)}</div>
+  </div>`;
+
+function transRows(L){return L.map(t=>`<tr><td class="num">${t[0]}</td><td>${t[1]}</td>
+  <td style="text-align:right" class="${t[2].startsWith('+')?'amt-plus':'amt-minus'} num">${t[2]}</td>
+  <td style="text-align:right" class="num">${t[3]}</td></tr>`).join('')}
+function transCards(L){return L.map(t=>`<div class="rec"><div class="rec-top"><span>${t[1]}</span>
+  <b class="${t[2].startsWith('+')?'amt-plus':'amt-minus'} num">${t[2]}</b></div>
+  <div class="rec-sub"><span>${t[0]}</span><span>Saldo: ${t[3]}</span></div></div>`).join('')}
+function filterTrans(q){
+  q=(q||'').toLowerCase().trim();
+  const L=TRANS.filter(t=>!q||(t[0]+' '+t[1]+' '+t[2]+' '+t[3]).toLowerCase().includes(q));
+  document.getElementById('trans-tbody').innerHTML = L.length?transRows(L):`<tr><td colspan="4" class="no-res">Brak wyników dla „${q}"</td></tr>`;
+  document.getElementById('trans-cards').innerHTML = L.length?transCards(L):`<div class="no-res">Brak wyników</div>`;
+  document.getElementById('trans-count').textContent = `${L.length} z ${TRANS.length}`;
+}
+V.trans = ()=>`
+  <div class="page-head"><h2>Historia transakcji</h2><p>Doładowania i opłaty na koncie</p></div>
+  <div class="card">
+    <div class="search-bar"><i class="bi bi-search"></i><input class="search-input" placeholder="Szukaj po opisie, dacie, kwocie…" oninput="filterTrans(this.value)" autofocus><span class="search-count" id="trans-count">${TRANS.length} z ${TRANS.length}</span></div>
+    <table class="tbl">
+      <thead><tr><th>Data</th><th>Opis</th><th style="text-align:right">Kwota</th><th style="text-align:right">Saldo</th></tr></thead>
+      <tbody id="trans-tbody">${transRows(TRANS)}</tbody>
+    </table>
+    <div class="tbl-cards" id="trans-cards">${transCards(TRANS)}</div>
+  </div>`;
+
+V.password = ()=>`
+  <div class="page-head"><h2>Zmiana hasła</h2><p>Bezpieczeństwo dostępu do panelu i usługi</p></div>
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-title"><i class="bi bi-shield-lock"></i> Hasło do panelu</div>
+      <div class="field"><label>Obecne hasło</label><input class="input" type="password"></div>
+      <div class="field"><label>Nowe hasło</label><input class="input" type="password" placeholder="Min. 8 znaków"></div>
+      <div class="field"><label>Powtórz nowe hasło</label><input class="input" type="password"></div>
+      <button class="btn btn-primary">Zmień hasło panelu</button>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="bi bi-router"></i> Hasło usługi (SIP)</div>
+      <div class="field"><label>Login SIP</label><input class="input" value="457110101" readonly></div>
+      <div class="field"><label>Nowe hasło SIP</label><input class="input" type="password" placeholder="Min. 8 znaków"></div>
+      <div class="help-box"><i class="bi bi-info-circle-fill"></i><div>Hasło usługi to dane logowania do aplikacji softphone. Po zmianie zaktualizuj je w aplikacji.</div></div>
+      <button class="btn btn-primary mt">Zmień hasło usługi</button>
+    </div>
+  </div>`;
+
+V.config = ()=>`
+  <div class="page-head"><h2>Konfiguracja urządzenia</h2><p>Skonfiguruj aplikację softphone, aby korzystać z numeru</p></div>
+  <div class="card">
+    <div class="card-title"><i class="bi bi-phone-vibrate"></i> Szybka konfiguracja</div>
+    <div class="cfg-grid">
+      <div class="qr-box">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=170x170&margin=0&data=sip%3A457110101%40sip.actio.pl" alt="QR konfiguracji">
+        <div class="qr-cap">Zeskanuj w aplikacji softphone<br>(Zoiper / Linphone)</div>
+      </div>
+      <div>
+        <div class="cfg-cred">
+          <div class="drow"><span class="k">Serwer SIP</span><span class="v">sip.actio.pl</span></div>
+          <div class="drow"><span class="k">Login (SIP)</span><span class="v">457110101</span></div>
+          <div class="drow"><span class="k">Hasło</span><span class="v">•••••••• · <a href="#" onclick="go('password');return false" style="font-weight:600">zmień</a></span></div>
+          <div class="drow"><span class="k">Port</span><span class="v">5060 (UDP)</span></div>
+        </div>
+        <div style="font-weight:700;font-size:14px;margin-bottom:4px">Kroki</div>
+        <ol class="steps">
+          <li>Pobierz aplikację softphone na telefon.</li>
+          <li>Zeskanuj kod QR lub wpisz dane SIP ręcznie.</li>
+          <li>Zaloguj się – numer pojawi się jako „zarejestrowany".</li>
+          <li>Gotowe – możesz dzwonić i odbierać połączenia.</li>
+        </ol>
+        <div class="app-links">
+          <a class="app-chip" href="#" onclick="return false"><i class="bi bi-apple"></i> App Store</a>
+          <a class="app-chip" href="#" onclick="return false"><i class="bi bi-google-play"></i> Google Play</a>
+        </div>
+      </div>
+    </div>
+    <div class="help-box mt"><i class="bi bi-info-circle-fill"></i><div>Problem z konfiguracją? Zadzwoń do pomocy technicznej <a href="tel:+48616489009"><b>61 648 90 09</b></a> lub kliknij słuchawkę w prawym dolnym rogu.</div></div>
+  </div>`;
+
+const INVOICES=[["FV 05/2026","28.05.2026","12,30 zł","paid"],["FV 04/2026","28.04.2026","12,30 zł","paid"],["FV 03/2026","28.03.2026","15,75 zł","paid"],["FV 06/2026","01.06.2026","10,00 zł","due"]];
+function invStatus(s){return `<span class="inv-status ${s==='paid'?'inv-paid':'inv-due'}"><i class="bi ${s==='paid'?'bi-check-circle-fill':'bi-clock-fill'}"></i>${s==='paid'?'Opłacona':'Do zapłaty'}</span>`}
+V.invoices = ()=>`
+  <div class="page-head"><h2>Faktury</h2><p>Faktury VAT do pobrania</p></div>
+  <div class="card">
+    <table class="tbl">
+      <thead><tr><th>Numer</th><th>Data</th><th>Kwota</th><th>Status</th><th></th></tr></thead>
+      <tbody>${INVOICES.map(i=>`<tr><td><b>${i[0]}</b></td><td class="num">${i[1]}</td><td class="num">${i[2]}</td><td>${invStatus(i[3])}</td>
+        <td style="text-align:right"><a href="#" onclick="return false" style="font-weight:700"><i class="bi bi-download"></i> PDF</a></td></tr>`).join('')}</tbody>
+    </table>
+    <div class="tbl-cards">${INVOICES.map(i=>`<div class="rec"><div class="rec-top"><b>${i[0]}</b>${invStatus(i[3])}</div>
+      <div class="rec-sub"><span>${i[1]} · ${i[2]}</span><a href="#" onclick="return false" style="font-weight:700"><i class="bi bi-download"></i> PDF</a></div></div>`).join('')}</div>
+  </div>`;
+
+// ---------- router ----------
+function go(view){
+  if(view==='logout'){ logout(); return; }
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active', n.dataset.view===view));
+  document.getElementById('main').innerHTML = (V[view]||V.info)();
+  document.getElementById('main').scrollTop=0; window.scrollTo(0,0);
+  closeDrawer();
+  const ud=document.getElementById('user-dropdown'); if(ud)ud.classList.remove('open');
+}
+document.querySelectorAll('.nav-item').forEach(n=>n.addEventListener('click',()=>go(n.dataset.view)));
+
+// ---------- drawer ----------
+function closeDrawer(){document.body.classList.remove('drawer-open')}
+document.getElementById('hamburger').addEventListener('click',()=>document.body.classList.toggle('drawer-open'));
+document.getElementById('overlay').addEventListener('click',closeDrawer);
+
+// ---------- token ----------
+function copyToken(){
+  const t=document.getElementById('apitok').textContent;
+  if(navigator.clipboard)navigator.clipboard.writeText(t).catch(()=>{});
+  const b=document.getElementById('btn-copy');
+  b.classList.add('copied');b.querySelector('i').className='bi bi-check2';b.querySelector('span').textContent='Skopiowano!';
+  setTimeout(()=>{b.classList.remove('copied');b.querySelector('i').className='bi bi-clipboard';b.querySelector('span').textContent='Kopiuj token';},1800);
+}
+function regenToken(){
+  const cs='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';let t='';
+  for(let i=0;i<32;i++)t+=cs[Math.floor(Math.random()*cs.length)];
+  document.getElementById('apitok').textContent=t;
+}
+
+// ---------- user menu ----------
+function toggleUserMenu(e){ if(e)e.stopPropagation(); document.getElementById('user-dropdown').classList.toggle('open'); document.getElementById('notif-dd').classList.remove('open'); }
+document.addEventListener('click',e=>{
+  const w=document.querySelector('.user-menu-wrap');
+  if(w && !w.contains(e.target)) document.getElementById('user-dropdown').classList.remove('open');
+});
+
+// ---------- notifications ----------
+function toggleNotif(e){ if(e)e.stopPropagation(); document.getElementById('notif-dd').classList.toggle('open'); document.getElementById('user-dropdown').classList.remove('open'); }
+document.addEventListener('click',e=>{
+  const w=document.querySelector('.bell-wrap');
+  if(w && !w.contains(e.target)) document.getElementById('notif-dd').classList.remove('open');
+});
+
+// ---------- floating BOK ----------
+function toggleFab(e){ if(e)e.stopPropagation(); document.getElementById('fab-wrap').classList.toggle('open'); }
+document.addEventListener('click',e=>{
+  const w=document.getElementById('fab-wrap');
+  if(w && !w.contains(e.target)) w.classList.remove('open');
+});
+
+// ---------- top-up ----------
+function openTopup(){ document.getElementById('topup-modal').classList.add('open'); }
+function closeTopup(){ document.getElementById('topup-modal').classList.remove('open'); }
+function selAmt(el,v){ document.querySelectorAll('.amt-opt').forEach(o=>o.classList.remove('sel')); el.classList.add('sel'); document.getElementById('amt-val').textContent=v; }
+document.getElementById('topup-modal').addEventListener('click',e=>{ if(e.target.id==='topup-modal')closeTopup(); });
+
+// ---------- low-balance banner (dismiss do wylogowania) ----------
+function dismissBanner(){ sessionStorage.setItem('actio_banner_dismissed','1'); const b=document.getElementById('lowbal-banner'); if(b)b.remove(); }
+
+// ---------- auth ----------
+function showApp(){document.getElementById('login-view').classList.add('hidden');document.getElementById('app').style.display='block';go('info')}
+function logout(){sessionStorage.removeItem('actio_demo');sessionStorage.removeItem('actio_banner_dismissed');document.getElementById('app').style.display='none';document.getElementById('login-view').classList.remove('hidden');document.getElementById('li-user').value='';document.getElementById('li-pass').value=''}
+document.getElementById('login-form').addEventListener('submit',e=>{
+  e.preventDefault();
+  const u=document.getElementById('li-user').value.trim(),p=document.getElementById('li-pass').value;
+  if(u==='test'&&p==='test123'){sessionStorage.setItem('actio_demo','1');showApp();}
+  else{document.getElementById('login-err').style.display='block';}
+});
+if(sessionStorage.getItem('actio_demo')==='1')showApp();
+</script>
+</body>
+</html>

@@ -442,12 +442,13 @@ def generate_report() -> dict:
         report_url = f"{base}/raporty?file={pathlib.Path(vault_path).name}" if base else vault_path
     else:
         report_url = _build_obsidian_url(vault_path)
-    # Push #1 — Tomek (CMO): pełna wersja Daily digest
-    send_pushover(
-        title=f"Actio raport {data['date']}",
-        message=_short_summary(report_md),
-        url=report_url,
-    )
+    # Push #1 — Tomek (CMO): pełna wersja Daily digest (skip jeśli PUSHOVER_USER_KEY niemożna)
+    if os.environ.get("PUSHOVER_USER_KEY"):
+        send_pushover(
+            title=f"Actio raport {data['date']}",
+            message=_short_summary(report_md),
+            url=report_url,
+        )
 
     # Push #2 — grupa PANEL (Hubert + ew. inni): wersja panel (Daily digest + 🟢 anomalie)
     panel_keys = [k.strip() for k in os.environ.get("PUSHOVER_USER_KEY_PANEL", "").split(",") if k.strip()]

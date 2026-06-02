@@ -32,6 +32,11 @@ _static_dir = pathlib.Path(__file__).parent / "static"
 if _static_dir.exists():
     app.mount("/form", StaticFiles(directory=str(_static_dir), html=True), name="form")
 
+# Panel Klienta demo (redesign) – statyczny SPA, login test/test123 (client-side)
+_panel_dir = pathlib.Path(__file__).parent / "panel-demo"
+if _panel_dir.exists():
+    app.mount("/panel", StaticFiles(directory=str(_panel_dir), html=True), name="panel")
+
 
 def _db_path() -> str:
     val = os.environ.get("DB_PATH")
@@ -180,3 +185,75 @@ def edit_submit(draft_id: int, token: str, background_tasks: BackgroundTasks, ed
 @app.get("/autopost/health")
 def health():
     return {"status": "ok", "service": "autopost-webhook"}
+
+
+# ─── ACTIO SMS API webhook ──────────────────────────────────────────
+# Odbiera: (1) potwierdzenia dostarczenia {type:"NOTIFICATION", message_id, status}
+#          (2) wiadomości przychodzące    {type:"MESSAGE", from, to, body}
+# Pod /autopost/ → dziedziczy Cloudflare Access bypass + routing do :44321.
+# Actio: 1 próba dostarczenia, brak retry, brak auth, nie śledzi przekierowań.
+# URL dla panelu Actio: https://actio-marketing.tomlebioda.com/autopost/sms/webhook
+_SMS_EVENTS_DDL = """
+CREATE TABLE IF NOT EXISTS sms_events (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    received_at TEXT NOT NULL DEFAULT (datetime('now')),
+    event_type  TEXT,
+    message_id  TEXT,
+    status      TEXT,
+    sms_from    TEXT,
+    sms_to      TEXT,
+    body        TEXT,
+    raw         TEXT NOT NULL
+);
+"""
+_SMS_JSONL = pathlib.Path(__file__).parent / "sms_events.jsonl"
+
+try:
+    with db._connect(_db_path()) as _c:
+        _c.execute(_SMS_EVENTS_DDL)
+except Exception as _e:
+    print(f"[sms_webhook] init table failed: {_e}")
+
+
+@app.post("/autopost/sms/webhook")
+async def sms_webhook(request: Request):
+    raw = await request.body()
+    try:
+        payload = json.loads(raw or b"{}")
+    except Exception:
+        payload = {"_unparsed": (raw or b"").decode("utf-8", "replace")[:2000]}
+
+    etype = payload.get("type")
+    rec = {
+        "event_type": etype,
+        "message_id": payload.get("message_id"),
+        "status": payload.get("status"),
+        "sms_from": payload.get("from"),
+        "sms_to": payload.get("to"),
+        "body": payload.get("body"),
+        "raw": json.dumps(payload, ensure_ascii=False),
+    }
+    # 1) JSONL append (robust, niezależne od DB)
+    try:
+        line = json.dumps(
+            {"received_at": datetime.datetime.utcnow().isoformat(), **payload},
+            ensure_ascii=False,
+        )
+        with _SMS_JSONL.open("a", encoding="utf-8") as f:
+            f.write(line + "\n")
+    except Exception as e:
+        print(f"[sms_webhook] jsonl write failed: {e}")
+    # 2) DB insert (do query/raportów)
+    try:
+        with db._connect(_db_path()) as conn:
+            conn.execute(
+                "INSERT INTO sms_events (event_type, message_id, status, sms_from, sms_to, body, raw) "
+                "VALUES (:event_type, :message_id, :status, :sms_from, :sms_to, :body, :raw)",
+                rec,
+            )
+    except Exception as e:
+        print(f"[sms_webhook] db insert failed: {e}")
+    # 3) journal (widoczne w journalctl -u actio-webhook)
+    print(f"[sms_webhook] {etype or 'unknown'} :: {rec['raw'][:300]}")
+
+    return {"received": True}

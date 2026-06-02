@@ -181,7 +181,7 @@ def top_pages_gsc(days: int = 30, limit: int = 5) -> list[dict]:
 
 
 def lead_type_breakdown(days: int = 21) -> dict:
-    """Breakdown lead_type (form/phone) + per landing/phone. Conditional render."""
+    """Breakdown lead_type (form/phone/registration) + per landing/phone. Conditional render."""
     s = (TODAY - timedelta(days=days)).isoformat()
     e = TODAY.isoformat()
     totals = _q("""
@@ -193,8 +193,9 @@ def lead_type_breakdown(days: int = 21) -> dict:
     by_type = {r["lead_type"]: int(r["cnt"]) for r in totals}
     form_count = by_type.get("form", 0)
     phone_count = by_type.get("phone", 0)
+    registration_count = by_type.get("registration", 0)
     untagged_count = by_type.get("(not set)", 0) + by_type.get("", 0)
-    total_tagged = form_count + phone_count
+    total_tagged = form_count + phone_count + registration_count
     grand_total = total_tagged + untagged_count
 
     # Skip section only if no events at all
@@ -223,6 +224,7 @@ def lead_type_breakdown(days: int = 21) -> dict:
         "show": True,
         "form_count": form_count,
         "phone_count": phone_count,
+        "registration_count": registration_count,
         "untagged_count": untagged_count,
         "total_tagged": total_tagged,
         "total": grand_total,
@@ -300,17 +302,20 @@ def render_md() -> str:
         total = lb["total"]
         form_pct = lb["form_count"] * 100 // total if total else 0
         phone_pct = lb["phone_count"] * 100 // total if total else 0
+        registration_pct = lb["registration_count"] * 100 // total if total else 0
         untagged_pct = lb["untagged_count"] * 100 // total if total else 0
+        tagged_pct = form_pct + phone_pct + registration_pct
         md += f"""
 ---
 
-## 📞 Z czego dzwonią, co wypełniają (ostatnie 21 dni)
+## 📞 Z czego dzwonią, co wypełniają, kto się rejestruje (ostatnie 21 dni)
 
 | Typ | Konwersje | % udziału |
 |---|---:|---:|
 | 📝 **Formularz CF7** (prawdziwe leady) | {lb['form_count']} | {form_pct}% |
 | 📞 **Klik na numer telefonu** (intent kontaktu) | {lb['phone_count']} | {phone_pct}% |
-| **Razem realne** | **{lb['total_tagged']}** | {form_pct + phone_pct}% |
+| ✅ **Potwierdzenie rejestracji** (założone konto) | {lb['registration_count']} | {registration_pct}% |
+| **Razem realne** | **{lb['total_tagged']}** | {tagged_pct}% |
 """
         if lb["untagged_count"] > 0:
             md += f"| _Bez tagu (sprzed wdrożenia GTM enrichment 12.05)_ | _{lb['untagged_count']}_ | _{untagged_pct}%_ |\n"
@@ -346,23 +351,11 @@ def render_md() -> str:
     md += f"""
 ---
 
-## 🚀 Co zostało wdrożone (10-13.05)
-
-- **24/7 schedule** dla wszystkich 9 kampanii (poprzednio Pn-Pt 8-16) – łapiemy wieczorne queries
-- **BRAND budget**: 30 zł/d → 100 zł/d (unified), bid 2,50→3,50, dziś **Smart Bidding** (Maximize Conversions)
-- **Mobile bid modifier**: -90% → -20% (60-70% PL search to mobile, otwarliśmy ten kanał)
-- **Nowa kampania SEARCH_3G_LIKWIDACJA_PL** – time-sensitive (operatorzy gaszą 3G)
-- **GTM enrichment** – od teraz wiemy które formularze (2485 vs 123446) i numery telefonów (BOK vs Pomoc) generują leady
-- **Bid bumpy** na SIPTRUNK/VOIP/KOMORKI/SMSAPI (10.05) – łapanie premium aukcji
-- **3 nowe high-intent keywords**: `voip dla biznesu`, `wdrożenie voip`, `voip poznań`, `system voip dla firmy`
-- **Autopublisher WP postów** (uruchomiony 13.05) – wt+pt 9:00 generuje content blog z LLM, akceptacja mailem
-
----
-
 ## ℹ️ Notatka metodologiczna
 
-- Konwersje GA4: event `generate_lead` (formularz CF7 lub klik tel:) – różni się od Google Ads attribution (Ads liczy klik-conversion 30d window, GA4 last-click sesji)
+- Konwersje GA4: event `generate_lead` (formularz CF7, klik tel:, lub potwierdzenie rejestracji konta `/registration_confirm/`) – różni się od Google Ads attribution (Ads liczy klik-conversion 30d window, GA4 last-click sesji)
 - "Konwersje direct" to często **pokłosie reklam** – user widzi ad, googluje brand za 1-3 dni, wchodzi direct, konwertuje
+- Wartość konwersji (`conv_value`) jest dynamiczna od 18.05: zależna od strony z której przyszedł lead (SIP Trunk 2400 zł, 3CX 3000 zł, SMS API 3600 zł, Wirtualna Centrala 3300 zł, Actio Mobile 360 zł, rejestracja konta 1500 zł, generic VoIP 1200 zł, default 900 zł)
 
 """
     return md

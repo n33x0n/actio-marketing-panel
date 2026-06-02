@@ -24,6 +24,8 @@ EARLY_BURN_PCT = 0.80
 
 
 def _send_emergency(title: str, message: str) -> None:
+    if not os.environ.get("PUSHOVER_USER_KEY"):
+        return
     httpx.post(
         "https://api.pushover.net/1/messages.json",
         data={

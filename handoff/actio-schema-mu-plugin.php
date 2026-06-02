@@ -83,6 +83,67 @@ function actio_faqpage_registry(): array {
         ],
         // === FAQ_ENTRY_END: wirtualny-numer-komorkowy-voip ===
 
+        // === FAQ_ENTRY_START: wirtualny-numer-telefonu-dla-firm ===
+        'wirtualny-numer-telefonu-dla-firm' => [
+            ['q' => 'Czym różni się wirtualny numer od zwykłego numeru stacjonarnego?',
+             'a' => 'Wirtualny numer nie jest przypisany do fizycznej linii telefonicznej ani konkretnej lokalizacji. Działa przez internet (VoIP), co pozwala kierować połączenia do dowolnego urządzenia lub grupy pracowników, niezależnie od miejsca ich przebywania. Zwykły numer stacjonarny jest powiązany z konkretnym adresem i wymaga fizycznej infrastruktury.'],
+            ['q' => 'Jak szybko można uruchomić wirtualny numer?',
+             'a' => 'Uruchomienie wirtualnego numeru trwa zazwyczaj od kilku godzin do jednego dnia roboczego. Nie wymaga instalacji sprzętu ani wizyty technika – konfiguracja odbywa się zdalnie przez panel administracyjny dostawcy.'],
+            ['q' => 'Czy wirtualny numer można przenieść od innego operatora?',
+             'a' => 'Tak, przeniesienie istniejącego numeru telefonicznego do nowego operatora VoIP jest możliwe i odbywa się zgodnie z procedurą przenoszalności numerów (MNP/LNP) regulowaną przez UKE. Proces trwa zazwyczaj kilka dni roboczych i nie powoduje przerwy w odbieraniu połączeń.'],
+            ['q' => 'Ile kosztuje wirtualny numer telefonu dla firmy?',
+             'a' => 'Koszt zależy od rodzaju numeru, liczby linii i wybranych funkcji. Podstawowy abonament za wirtualny numer zaczyna się od kilkudziesięciu złotych miesięcznie. W przypadku rozbudowanych systemów z kolejkowaniem, IVR i analityką cena jest wyższa, ale nadal znacznie niższa niż utrzymanie tradycyjnej centrali PABX. Najlepiej poprosić o indywidualną wycenę dopasowaną do potrzeb firmy.'],
+            ['q' => 'Czy wirtualny numer działa na telefonie komórkowym?',
+             'a' => 'Tak, wirtualny numer może być skierowany na telefon komórkowy, aplikację mobilną VoIP lub softphone na komputerze. Pracownik odbiera połączenia przychodzące na wirtualny numer niezależnie od tego, gdzie się znajduje, pod warunkiem dostępu do internetu lub sieci GSM.'],
+            ['q' => 'Czy można mieć kilka wirtualnych numerów w jednej firmie?',
+             'a' => 'Tak, firmy mogą posiadać dowolną liczbę wirtualnych numerów – np. oddzielne numery dla różnych działów, oddziałów, kampanii marketingowych lub produktów. Wszystkie numery mogą być zarządzane z poziomu jednego panelu administracyjnego.'],
+            ['q' => 'Czy wirtualny numer zapewnia bezpieczeństwo rozmów?',
+             'a' => 'Rzetelni operatorzy VoIP stosują szyfrowanie transmisji głosu (protokół SRTP i TLS), co zabezpiecza rozmowy przed przechwyceniem. Ważne jest, aby wybrać dostawcę z własną infrastrukturą w Polsce i potwierdzonymi standardami bezpieczeństwa, szczególnie jeśli firma przetwarza wrażliwe dane klientów.'],
+        ],
+        // === FAQ_ENTRY_END: wirtualny-numer-telefonu-dla-firm ===
+
+        // === FAQ_ENTRY_START: numer-voip-dla-firm ===
+        'numer-voip-dla-firm' => [
+            ['q' => 'Czy numer VoIP różni się od zwykłego numeru telefonu?',
+             'a' => 'Dla osoby dzwoniącej z zewnątrz numer VoIP wygląda i działa identycznie jak tradycyjny numer stacjonarny lub komórkowy. Różnica leży w technologii przesyłu głosu – zamiast sieci telefonicznej PSTN używane jest łącze internetowe.'],
+            ['q' => 'Czy mogę przenieść istniejący numer stacjonarny do VoIP?',
+             'a' => 'Tak. Procedura przeniesienia numeru (portability) pozwala zachować dotychczasowy numer i przenieść go do operatora VoIP. Czas przeniesienia zależy od poprzedniego operatora i wynosi zazwyczaj od kilku do kilkunastu dni roboczych.'],
+            ['q' => 'Jakie łącze internetowe jest potrzebne do korzystania z numerów VoIP?',
+             'a' => 'Jedno równoczesne połączenie głosowe wymaga około 80-100 kbps pasma. Standardowe łącze szerokopasmowe wystarczy dla kilkudziesięciu jednoczesnych rozmów. Ważniejsza od przepustowości jest stabilność i niskie opóźnienia połączenia internetowego.'],
+            ['q' => 'Czy numer VoIP działa podczas awarii internetu?',
+             'a' => 'Podczas przerwy w dostępie do internetu numer VoIP nie będzie dostępny na urządzeniach w biurze. Dobrą praktyką jest skonfigurowanie przekierowania awaryjnego na numer komórkowy, które operator aktywuje automatycznie w przypadku braku dostępności linii.'],
+            ['q' => 'Ile kosztuje numer VoIP dla firmy?',
+             'a' => 'Koszt zależy od operatora, liczby numerów i wybranego pakietu. Abonament za numer VoIP zaczyna się zazwyczaj od kilku złotych miesięcznie. W porównaniu z tradycyjnymi liniami ISDN oszczędności na rachunkach za połączenia mogą wynieść od 30 do 60 procent.'],
+            ['q' => 'Czy pracownik może używać firmowego numeru VoIP na telefonie komórkowym?',
+             'a' => 'Tak. Większość operatorów udostępnia aplikację mobilną lub umożliwia konfigurację klienta SIP na smartfonie. Pracownik dzwoni i odbiera połączenia ze swojego firmowego numeru VoIP niezależnie od miejsca, w którym się znajduje.'],
+            ['q' => 'Jak wygląda obsługa techniczna numerów VoIP?',
+             'a' => 'Profesjonalni operatorzy zapewniają wsparcie techniczne przez telefon, e-mail lub chat, często w trybie 24/7. Actio oferuje dedykowanego opiekuna technicznego dla klientów biznesowych oraz umowy SLA określające gwarantowany czas reakcji i usunięcia awarii.'],
+            ['q' => 'Czy numery VoIP można używać do wysyłania faksów?',
+             'a' => 'Tak, istnieje możliwość obsługi faksów przez VoIP w technologii T.38 lub za pomocą usługi faks-na-e-mail. Tradycyjne faksy analogowe podłączone przez adapter ATA również mogą współpracować z numerami VoIP, choć jakość transmisji może być zmienna w zależności od parametrów łącza.'],
+        ],
+        // === FAQ_ENTRY_END: numer-voip-dla-firm ===
+
+        // === FAQ_ENTRY_START: telefonia-voip-dla-firm ===
+        'telefonia-voip-dla-firm' => [
+            ['q' => 'Czy telefonia VoIP jest odpowiednia dla małych firm?',
+             'a' => 'Tak. Telefonia VoIP jest skalowalna i opłacalna niezależnie od wielkości firmy. Małe firmy mogą zacząć od kilku numerów i rozbudowywać system wraz z rozwojem działalności. Modele abonamentowe eliminują wysokie koszty wejścia charakterystyczne dla tradycyjnych central telefonicznych.'],
+            ['q' => 'Jakiego łącza internetowego potrzebuję do VoIP?',
+             'a' => 'Do obsługi jednego połączenia VoIP w dobrej jakości wystarczy około 100 kbps pasma w obu kierunkach. W praktyce firma z 20 równoczesnymi połączeniami potrzebuje łącza o przepustowości co najmniej 10 Mbps. Ważniejsza od szybkości jest jednak stabilność połączenia i niskie opóźnienia (latency poniżej 150 ms).'],
+            ['q' => 'Czy mogę zachować dotychczasowy numer telefonu przy przejściu na VoIP?',
+             'a' => 'Tak. Przeniesienie numeru (portability) to standardowa procedura regulowana prawem telekomunikacyjnym. Operator VoIP przeprowadza migrację numerów, a cały proces odbywa się bez długotrwałej przerwy w dostępności.'],
+            ['q' => 'Czy VoIP działa podczas awarii internetu?',
+             'a' => 'W przypadku awarii łącza internetowego standardowe połączenia VoIP nie są dostępne. Dobrzy dostawcy oferują jednak mechanizmy awaryjne, takie jak automatyczne przekierowanie połączeń na numer komórkowy lub zapasowe łącze. Warto omówić scenariusze awaryjne z dostawcą przed podpisaniem umowy.'],
+            ['q' => 'Ile kosztuje telefonia VoIP dla firmy?',
+             'a' => 'Koszty zależą od liczby użytkowników, wybranych funkcji i modelu rozliczenia. Typowy abonament za stanowisko w modelu chmurowym wynosi od kilkudziesięciu do kilkuset złotych miesięcznie. Do tego dochodzą koszty połączeń wychodzących, choć wielu operatorów oferuje pakiety z nielimitowanymi połączeniami krajowymi.'],
+            ['q' => 'Czym różni się VoIP od tradycyjnej centrali telefonicznej (PBX)?',
+             'a' => 'Tradycyjna centrala PBX wymaga dedykowanego sprzętu zainstalowanego w siedzibie firmy i fizycznych łączy telefonicznych. VoIP działa przez internet, co eliminuje koszty sprzętu i okablowania. Wirtualna centrala VoIP oferuje te same funkcje co fizyczna PBX, a często znacznie więcej, przy niższych kosztach wdrożenia i utrzymania.'],
+            ['q' => 'Czy telefonia VoIP jest bezpieczna?',
+             'a' => 'Przy odpowiedniej konfiguracji i wyborze sprawdzonego dostawcy – tak. Kluczowe elementy to szyfrowanie transmisji (SRTP/TLS), silne uwierzytelnianie dostępu do panelu administracyjnego oraz monitoring ruchu pod kątem nieautoryzowanych połączeń. Należy unikać konfigurowania systemów VoIP bez podstawowych zabezpieczeń, ponieważ niezabezpieczone centrale są celem ataków hakerskich.'],
+            ['q' => 'Jak długo trwa wdrożenie VoIP w firmie?',
+             'a' => 'Dla małych firm wdrożenie może zająć od kilku dni do dwóch tygodni. W przypadku dużych organizacji z wieloma lokalizacjami i złożonymi wymaganiami proces trwa zwykle od czterech do ośmiu tygodni. Czas migracji numerów zależy od procedur obowiązującego operatora i wynosi zazwyczaj od kilku do kilkunastu dni roboczych.'],
+        ],
+        // === FAQ_ENTRY_END: telefonia-voip-dla-firm ===
+
         // === FAQ_AUTO_INSERT_AFTER === (autopublisher dodaje nowe wpisy przed tą linią)
     ];
 }
