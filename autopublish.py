@@ -455,7 +455,7 @@ def _send_draft_email(draft_id: int, draft: dict, token: str, image_path: str | 
 # === MAIN ENTRY POINTS ===
 
 def generate_draft() -> dict:
-    """Główna funkcja — wt+pt 9:00 timer ją odpala."""
+    """Główna funkcja — wt+czw 9:00 timer ją odpala."""
     db_path = _env("DB_PATH")
     db.init_db(db_path)
 

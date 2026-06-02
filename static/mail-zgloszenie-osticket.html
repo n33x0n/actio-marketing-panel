@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nowe zgłoszenie #{{TICKET_ID}}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Mulish:wght@400;500;600;700;800&display=swap');
+  @media only screen and (max-width: 620px) {
+    .email-container { width: 100% !important; max-width: 100% !important; }
+    .px-mobile { padding-left: 20px !important; padding-right: 20px !important; }
+  }
+</style>
+</head>
+<body style="margin:0; padding:0; background:#fafbfc; font-family:'Mulish', Arial, Helvetica, sans-serif; color:#1d2233; line-height:1.5;">
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#fafbfc;">
+  <tr>
+    <td align="center" style="padding:32px 16px;">
+
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" class="email-container" style="width:600px; max-width:600px; background:#ffffff; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,0.06); overflow:hidden;">
+
+        <!-- Logo + tag "wewnętrzne" -->
+        <tr>
+          <td style="padding:24px 40px 16px 40px; background:#ffffff; border-bottom:1px solid #f2f2f2;" class="px-mobile">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td align="left" valign="middle">
+                  <img src="https://actio.pl/wp-content/uploads/2025/09/ACTIO-LOGO-PODSTAWOWE.webp" alt="Actio" width="120" style="display:block; height:auto;">
+                </td>
+                <td align="right" valign="middle">
+                  <span style="display:inline-block; padding:4px 10px; background:#003388; color:#ffffff; border-radius:4px; font-size:11px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase;">Wewnętrzne · BOK</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Header -->
+        <tr>
+          <td style="padding:28px 40px 12px 40px;" class="px-mobile">
+            <p style="margin:0 0 4px 0; font-size:13px; color:#38454a; text-transform:uppercase; letter-spacing:0.08em; font-weight:600;">
+              Nowe zgłoszenie
+            </p>
+            <h1 style="margin:0; font-family:'Mulish', Arial, sans-serif; font-size:28px; font-weight:800; line-height:1.2; color:#003388;">
+              #{{TICKET_ID}}
+            </h1>
+            <p style="margin:8px 0 0 0; font-size:15px; line-height:1.6; color:#38454a;">
+              Cześć <strong>{{AGENT_NAME}}</strong> – właśnie wpadło nowe zgłoszenie do Twojego działu. Szczegóły poniżej.
+            </p>
+          </td>
+        </tr>
+
+        <!-- Meta zgłoszenia -->
+        <tr>
+          <td style="padding:24px 40px 0 40px;" class="px-mobile">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#fafbfc; border:1px solid #f2f2f2; border-radius:8px;">
+              <tr>
+                <td style="padding:18px 20px;">
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="font-size:14px; line-height:1.7;">
+                    <tr>
+                      <td style="color:#38454a; padding:4px 0; width:25%;">Od</td>
+                      <td style="color:#1d2233; font-weight:600; padding:4px 0;">{{FROM_NAME}} &lt;{{FROM_EMAIL}}&gt;</td>
+                    </tr>
+                    <tr>
+                      <td style="color:#38454a; padding:4px 0;">Dział</td>
+                      <td style="color:#1d2233; font-weight:600; padding:4px 0;">{{DEPARTMENT}}</td>
+                    </tr>
+                    <tr>
+                      <td style="color:#38454a; padding:4px 0;">Temat</td>
+                      <td style="color:#1d2233; font-weight:600; padding:4px 0;">{{SUBJECT}}</td>
+                    </tr>
+                    <tr>
+                      <td style="color:#38454a; padding:4px 0;">Priorytet</td>
+                      <td style="color:#1d2233; font-weight:600; padding:4px 0;">{{PRIORITY}}</td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Treść maila klienta -->
+        <tr>
+          <td style="padding:24px 40px 0 40px;" class="px-mobile">
+            <h2 style="margin:0 0 12px 0; font-family:'Mulish', Arial, sans-serif; font-size:16px; font-weight:700; color:#1d2233;">
+              Treść wiadomości
+            </h2>
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#ffffff; border:1px solid #e1e4e8; border-radius:8px;">
+              <tr>
+                <td style="padding:18px 20px; font-size:14px; line-height:1.7; color:#1d2233; white-space:pre-wrap;">
+{{MESSAGE_BODY}}
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- CTA -->
+        <tr>
+          <td style="padding:28px 40px 0 40px; text-align:center;" class="px-mobile">
+            <a href="https://actio.pl/ostickets/view.php?id={{TICKET_ID}}" target="_blank" style="display:inline-block; padding:14px 32px; background:#ee7f17; color:#ffffff; text-decoration:none; border-radius:6px; font-family:'Mulish', Arial, sans-serif; font-size:15px; font-weight:700;">
+              Otwórz zgłoszenie →
+            </a>
+          </td>
+        </tr>
+
+        <!-- Note -->
+        <tr>
+          <td style="padding:24px 40px 32px 40px;" class="px-mobile">
+            <p style="margin:0; font-size:13px; line-height:1.6; color:#38454a; text-align:center;">
+              Aby odpowiedzieć klientowi – użyj panelu zgłoszeń. <strong>Nie odpowiadaj na tego maila</strong> – odpowiedź nie trafi do klienta, tylko zostanie zignorowana.
+            </p>
+          </td>
+        </tr>
+
+      </table>
+
+      <!-- Stopka -->
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" class="email-container" style="width:600px; max-width:600px;">
+        <tr>
+          <td align="center" style="padding:16px 40px 8px 40px;" class="px-mobile">
+            <p style="margin:0; font-size:11px; line-height:1.5; color:#999999;">
+              Automatyczne powiadomienie z systemu OST · <strong>Zespół Actio</strong><br>
+              Ref-Mid: {{REF_MID}}
+            </p>
+          </td>
+        </tr>
+      </table>
+
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>

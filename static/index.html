@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Actio – Rejestracja</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* ── Reset & base ───────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    font-family: 'Mulish', system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    color: #38454A;
+    background: #f8f9fa;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Tokens (Actio brand) ──────────────────────────────── */
+  :root {
+    --c-primary: #ee7f17;
+    --c-primary-hover: #d56c0a;
+    --c-navy: #224DB7;
+    --c-text: #38454A;
+    --c-muted: #6b7780;
+    --c-border: #e1e6ec;
+    --c-bg: #ffffff;
+    --c-bg-soft: #fafbfc;
+    --c-error: #d32f2f;
+    --c-success: #2e7d32;
+    --radius: 10px;
+    --shadow-card: 0 2px 12px rgba(34, 56, 101, 0.06);
+    --shadow-input-focus: 0 0 0 3px rgba(238, 127, 23, 0.18);
+  }
+
+  /* ── Layout ────────────────────────────────────────────── */
+  .wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 32px 20px 64px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 32px;
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    .grid { grid-template-columns: 1fr; }
+    .side { order: 2; }
+  }
+
+  /* ── Card ──────────────────────────────────────────────── */
+  .card {
+    background: var(--c-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-card);
+    padding: 32px;
+  }
+  @media (max-width: 600px) { .card { padding: 24px 20px; border-radius: 0; } }
+
+  .header h1 {
+    font-size: 28px;
+    font-weight: 800;
+    color: #0A1821;
+    margin: 0 0 6px;
+    letter-spacing: -0.01em;
+  }
+  .header p {
+    margin: 0 0 28px;
+    color: var(--c-muted);
+    font-size: 15px;
+  }
+
+  /* ── Toggle Pre-paid / Post-paid ────────────────────────── */
+  .toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .toggle label {
+    cursor: pointer;
+    padding: 16px 18px;
+    border: 2px solid var(--c-border);
+    border-radius: var(--radius);
+    transition: all .15s;
+    position: relative;
+    background: var(--c-bg);
+  }
+  .toggle label:hover { border-color: #c8cfd6; background: var(--c-bg-soft); }
+  .toggle input { position: absolute; opacity: 0; pointer-events: none; }
+  .toggle input:checked + label {
+    border-color: var(--c-primary);
+    background: #fff8f1;
+    box-shadow: 0 1px 6px rgba(238, 127, 23, 0.15);
+  }
+  .toggle .ttitle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    color: #0A1821;
+    margin-bottom: 4px;
+    font-size: 15px;
+  }
+  .toggle .tdesc {
+    font-size: 13px;
+    color: var(--c-muted);
+    line-height: 1.4;
+  }
+  .toggle .icon {
+    width: 22px; height: 22px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 50%; background: #e8edf5; color: var(--c-navy);
+    font-size: 12px; font-weight: 700;
+  }
+  .toggle input:checked + label .icon {
+    background: var(--c-primary); color: white;
+  }
+
+  /* ── Form fields ────────────────────────────────────────── */
+  .row { display: grid; gap: 16px; margin-bottom: 16px; }
+  .row.row-2 { grid-template-columns: 1fr 1fr; }
+  .row.row-3 { grid-template-columns: 2fr 1fr 1.4fr; }
+  @media (max-width: 600px) {
+    .row.row-2, .row.row-3 { grid-template-columns: 1fr; }
+  }
+
+  .field { position: relative; }
+  .field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #38454A;
+    margin-bottom: 6px;
+  }
+  .field .req { color: var(--c-primary); margin-left: 2px; }
+  .field .hint {
+    font-size: 12px;
+    color: var(--c-muted);
+    margin-top: 4px;
+    line-height: 1.4;
+  }
+  .field input, .field select {
+    width: 100%;
+    height: 46px;
+    padding: 0 14px;
+    font-size: 15px;
+    font-family: inherit;
+    color: var(--c-text);
+    background: var(--c-bg);
+    border: 1.5px solid var(--c-border);
+    border-radius: 8px;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .field input::placeholder { color: #b0b8be; }
+  .field input:hover, .field select:hover { border-color: #c8cfd6; }
+  .field input:focus, .field select:focus {
+    outline: none;
+    border-color: var(--c-primary);
+    box-shadow: var(--shadow-input-focus);
+  }
+  .field input:invalid:not(:placeholder-shown),
+  .field input[aria-invalid="true"] {
+    border-color: var(--c-error);
+  }
+  .field .error {
+    display: none;
+    font-size: 12px;
+    color: var(--c-error);
+    margin-top: 4px;
+  }
+  .field input[aria-invalid="true"] ~ .error { display: block; }
+  .field input[aria-invalid="true"] ~ .hint { display: none; }
+
+  /* Password show/hide */
+  .pw-wrap { position: relative; }
+  .pw-toggle {
+    position: absolute;
+    right: 12px; top: 50%;
+    transform: translateY(-50%);
+    background: none; border: 0;
+    color: var(--c-muted);
+    cursor: pointer;
+    padding: 6px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .pw-toggle:hover { color: var(--c-text); }
+  .pw-strength {
+    height: 4px;
+    background: #eef0f3;
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+  .pw-strength-bar {
+    height: 100%;
+    background: var(--c-error);
+    width: 0%;
+    transition: width .2s, background .2s;
+  }
+
+  /* Conditional groups */
+  .conditional { display: none; }
+  .conditional.active { display: contents; }
+
+  /* Section divider */
+  .section-h {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--c-muted);
+    margin: 24px 0 12px;
+    padding-top: 20px;
+    border-top: 1px solid var(--c-border);
+  }
+
+  /* ── Consent ────────────────────────────────────────────── */
+  .consent {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 13px;
+    color: #4a555c;
+    line-height: 1.45;
+    margin: 20px 0 8px;
+  }
+  .consent input {
+    margin-top: 2px;
+    accent-color: var(--c-primary);
+    width: 16px; height: 16px;
+    flex-shrink: 0;
+  }
+  .consent a { color: var(--c-navy); text-decoration: underline; }
+
+  /* ── CTA ─────────────────────────────────────────────────── */
+  .cta {
+    width: 100%;
+    height: 54px;
+    background: var(--c-primary);
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: inherit;
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: background .15s, transform .05s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .cta:hover { background: var(--c-primary-hover); }
+  .cta:active { transform: translateY(1px); }
+  .cta:disabled { background: #c8cfd6; cursor: not-allowed; }
+
+  .cta-meta {
+    text-align: center;
+    font-size: 12px;
+    color: var(--c-muted);
+    margin-top: 12px;
+  }
+  .cta-meta a { color: var(--c-navy); text-decoration: none; font-weight: 600; }
+
+  /* ── Side panel ─────────────────────────────────────────── */
+  .side {
+    padding: 28px 24px;
+    background: linear-gradient(180deg, #fff8f1 0%, #ffffff 100%);
+    border: 1px solid #f3e3d0;
+    border-radius: var(--radius);
+  }
+  .side h3 {
+    font-size: 14px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--c-primary);
+    margin: 0 0 16px;
+  }
+  .benefits { list-style: none; padding: 0; margin: 0 0 22px; }
+  .benefits li {
+    display: flex; align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 14px;
+    font-size: 14px;
+    line-height: 1.4;
+    color: #2c3438;
+  }
+  .benefits li::before {
+    content: "✓";
+    flex-shrink: 0;
+    width: 22px; height: 22px;
+    background: var(--c-primary);
+    color: white;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .trust {
+    padding-top: 18px;
+    border-top: 1px solid #f3e3d0;
+    font-size: 12px;
+    color: var(--c-muted);
+  }
+  .trust strong { color: var(--c-text); display: block; margin-bottom: 4px; font-size: 13px; }
+
+  /* ── Mobile sticky CTA (optional, off by default) ─────── */
+  @media (max-width: 600px) {
+    .header h1 { font-size: 24px; }
+    .toggle { grid-template-columns: 1fr; }
+  }
+
+  /* ── Focus-visible for keyboard ────────────────────────── */
+  :focus-visible {
+    outline: 2px solid var(--c-primary);
+    outline-offset: 2px;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="grid">
+    <!-- ─── FORM CARD ──────────────────────────────────── -->
+    <form class="card" id="reg-form" novalidate>
+      <div class="header">
+        <h1>Dołącz do&nbsp;Actio</h1>
+        <p>Wypełnij formularz w&nbsp;2&nbsp;minuty – doradca skontaktuje się z&nbsp;Tobą w&nbsp;ciągu 24h z&nbsp;bezpłatną wyceną.</p>
+      </div>
+
+      <!-- Toggle typ konta -->
+      <fieldset class="toggle" style="border:0;padding:0;margin:0 0 28px;">
+        <legend class="visually-hidden" style="position:absolute;left:-9999px;">Wybierz typ konta</legend>
+
+        <input type="radio" name="account_type" id="t-prepaid" value="prepaid" checked>
+        <label for="t-prepaid">
+          <div class="ttitle">Konto prywatne</div>
+          <div class="tdesc">Płatność z&nbsp;góry, doładowujesz konto kiedy chcesz. Bez umowy, bez faktury VAT.</div>
+        </label>
+
+        <input type="radio" name="account_type" id="t-postpaid" value="postpaid">
+        <label for="t-postpaid">
+          <div class="ttitle">Konto firmowe</div>
+          <div class="tdesc">Płatność za&nbsp;fakturę VAT co miesiąc. Umowa B2B, indywidualna wycena.</div>
+        </label>
+      </fieldset>
+
+      <!-- Dane kontaktowe (zawsze) -->
+      <div class="row row-2">
+        <div class="field">
+          <label for="f-imie">Imię<span class="req">*</span></label>
+          <input type="text" id="f-imie" name="imie" placeholder="np. Anna" autocomplete="given-name" required>
+          <div class="error">Pole wymagane</div>
+        </div>
+        <div class="field">
+          <label for="f-nazwisko">Nazwisko<span class="req">*</span></label>
+          <input type="text" id="f-nazwisko" name="nazwisko" placeholder="np. Kowalska" autocomplete="family-name" required>
+          <div class="error">Pole wymagane</div>
+        </div>
+      </div>
+
+      <div class="row row-2">
+        <div class="field">
+          <label for="f-email">Adres e-mail<span class="req">*</span></label>
+          <input type="email" id="f-email" name="email" placeholder="anna@firma.pl" autocomplete="email" required>
+          <div class="error">Wprowadź poprawny adres e-mail</div>
+        </div>
+        <div class="field">
+          <label for="f-telefon">Telefon<span class="req">*</span></label>
+          <input type="tel" id="f-telefon" name="telefon" placeholder="600 123 456" autocomplete="tel" inputmode="tel" required>
+          <div class="hint">Zadzwonimy w&nbsp;24h, gdy email nie&nbsp;dotrze</div>
+          <div class="error">Wprowadź numer telefonu (9 cyfr)</div>
+        </div>
+      </div>
+
+      <!-- Dane firmy (warunkowe – Post-paid only) -->
+      <div class="conditional" id="cond-business">
+        <div class="section-h">Dane firmy</div>
+        <div class="row row-2">
+          <div class="field">
+            <label for="f-firma">Nazwa firmy<span class="req">*</span></label>
+            <input type="text" id="f-firma" name="firma" placeholder="np. Firma Sp. z o.o." autocomplete="organization">
+            <div class="error">Pole wymagane</div>
+          </div>
+          <div class="field">
+            <label for="f-nip">NIP<span class="req">*</span></label>
+            <input type="text" id="f-nip" name="nip" placeholder="1234567890" inputmode="numeric" maxlength="13">
+            <div class="hint">Sami pobierzemy dane z&nbsp;GUS</div>
+            <div class="error">NIP musi mieć 10 cyfr</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Adres -->
+      <div class="section-h">Adres</div>
+      <div class="row row-3">
+        <div class="field">
+          <label for="f-ulica">Ulica<span class="req">*</span></label>
+          <input type="text" id="f-ulica" name="ulica" placeholder="np. Marszałkowska" autocomplete="address-line1" required>
+          <div class="error">Pole wymagane</div>
+        </div>
+        <div class="field">
+          <label for="f-nr">Nr&nbsp;domu/lok.<span class="req">*</span></label>
+          <input type="text" id="f-nr" name="nr" placeholder="10/5" autocomplete="address-line2" required>
+          <div class="error">Pole wymagane</div>
+        </div>
+        <div class="field">
+          <label for="f-kod">Kod&nbsp;pocztowy<span class="req">*</span></label>
+          <input type="text" id="f-kod" name="kod" placeholder="00-001" inputmode="numeric" maxlength="6" autocomplete="postal-code" required>
+          <div class="error">Format 00-000</div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label for="f-miasto">Miasto<span class="req">*</span></label>
+          <input type="text" id="f-miasto" name="miasto" placeholder="np. Warszawa" autocomplete="address-level2" required>
+          <div class="error">Pole wymagane</div>
+        </div>
+      </div>
+
+      <!-- Hasło -->
+      <div class="section-h">Dane logowania</div>
+      <div class="row">
+        <div class="field">
+          <label for="f-haslo">Hasło<span class="req">*</span></label>
+          <div class="pw-wrap">
+            <input type="password" id="f-haslo" name="haslo" placeholder="Min. 8 znaków" autocomplete="new-password" minlength="8" required>
+            <button type="button" class="pw-toggle" id="pw-toggle" aria-label="Pokaż hasło">Pokaż</button>
+          </div>
+          <div class="pw-strength" aria-hidden="true"><div class="pw-strength-bar" id="pw-bar"></div></div>
+          <div class="hint">Min. 8&nbsp;znaków, w&nbsp;tym cyfra i&nbsp;znak specjalny</div>
+          <div class="error">Hasło zbyt słabe</div>
+        </div>
+      </div>
+
+      <!-- Zgody -->
+      <label class="consent">
+        <input type="checkbox" name="zgoda_regulamin" required>
+        <span>Akceptuję <a href="https://actio.pl/regulamin/" target="_blank" rel="noopener">regulamin</a> oraz <a href="https://actio.pl/polityka-prywatnosci/" target="_blank" rel="noopener">politykę prywatności</a>.<span class="req">*</span></span>
+      </label>
+      <label class="consent">
+        <input type="checkbox" name="zgoda_marketing">
+        <span>Chcę otrzymywać oferty produktów Actio na&nbsp;adres e-mail (możesz wycofać w&nbsp;każdej chwili).</span>
+      </label>
+
+      <button type="submit" class="cta" id="submit-btn">
+        Załóż konto
+        <span aria-hidden="true">→</span>
+      </button>
+      <div class="cta-meta">
+        Masz już konto? <a href="https://panel.actio.pl">Zaloguj się</a>
+      </div>
+    </form>
+
+    <!-- ─── SIDE PANEL ──────────────────────────────────── -->
+    <aside class="side">
+      <h3>Dlaczego Actio</h3>
+      <ul class="benefits">
+        <li>15&nbsp;lat doświadczenia w&nbsp;telekomunikacji B2B</li>
+        <li>Obsługujemy takich klientów jak PGE, Koleje Wielkopolskie, Pepco, czy Europa Systems</li>
+        <li>Pierwsze 30 dni bez&nbsp;opłat aktywacyjnych</li>
+        <li>Bezpłatna wycena w&nbsp;ciągu 24h</li>
+        <li>Pomoc techniczna 24/7</li>
+      </ul>
+      <div class="trust">
+        <strong>Bezpieczeństwo</strong>
+        Dane chronione SSL. Operator zarejestrowany w&nbsp;UKE.
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════════════
+   ACTIO REGISTRATION — Vanilla JS (no dependencies)
+
+   Dla deva — DEPLOY READY. Co warto zweryfikować przed wdrożeniem:
+
+   1. KONFIGURACJA (linie 491-495):
+      - API_BASE_URL: panel.actio.pl (gdzie żyje backend rejestracji)
+      - ENDPOINT_USER / ENDPOINT_COMPANY: ścieżki endpointów (Pre-paid / Post-paid)
+      - SUCCESS_REDIRECT: gdzie przekierować po sukcesie ('/dziekujemy')
+      - RECAPTCHA_SITE_KEY: zostaw '' jeśli nie używamy v3, inaczej wpisz klucz
+
+   2. PAYLOAD — formularz wysyła JSON z polami:
+      account_type, imie, nazwisko, email, telefon, haslo,
+      firma + nip (tylko Post-paid),
+      ulica, nr, kod, miasto, zgoda_regulamin, zgoda_marketing
+      Jeśli backend oczekuje innych nazw (camelCase) — zmap w submit handler.
+
+   3. UWAGA — nowe pola względem obecnego API:
+      - 'telefon' (required) — backend musi przyjąć
+      - 'zgoda_marketing' (optional checkbox) — opcjonalny
+      - 'pesel' USUNIĘTY z Pre-paid (przeniesiony na etap umowy)
+
+   4. ANALYTICS — wymaga window.gtag z G-W864FFJXKQ (już jest na actio.pl).
+      Wysyłane eventy: form_view, begin_checkout, generate_lead,
+      add_payment_info, sign_up, form_submit_failed, form_field_error.
+      Działa też z iframe — track() robi też window.parent.postMessage()
+      żeby parent page mógł podłączyć GTM listener.
+
+   5. reCAPTCHA v3 — kod jest zakomentowany w submit handler (linia ~675).
+      Odkomentuj 3 linie i wpisz SITE_KEY do konfiguracji powyżej.
+   ════════════════════════════════════════════════════════════════════════ */
+(() => {
+  'use strict';
+
+  // ── KONFIGURACJA (dla deva) ─────────────────────────
+  // Base URL backendu rejestracji. Jeśli formularz hostowany na panel.actio.pl,
+  // zostaw '' (relative). Jeśli na actio.pl/rejestracja → '/api' lub pełny URL.
+  const API_BASE_URL = 'https://panel.actio.pl';
+  const ENDPOINT_USER = '/api/registration/validate-user';      // Pre-paid
+  const ENDPOINT_COMPANY = '/api/registration/validate-company'; // Post-paid
+  const SUCCESS_REDIRECT = '/dziekujemy';  // page po rejestracji
+  const RECAPTCHA_SITE_KEY = '';  // wpisz klucz jeśli używamy reCAPTCHA v3 (zostaw '' jeśli nie)
+
+  // ── GA4 / Analytics wrapper ─────────────────────────
+  // Wysyła event przez gtag (jeśli dostępne) ORAZ przez postMessage do parent
+  // (gdyby formularz był osadzony w iframe — parent może podłączyć GTM listener).
+  function track(eventName, params) {
+    const data = Object.assign({
+      form_id: 'actio_registration',
+      form_location: location.pathname,
+      account_type: getAccountType(),
+    }, params || {});
+    try { if (typeof window.gtag === 'function') window.gtag('event', eventName, data); } catch (e) {}
+    try { window.parent !== window && window.parent.postMessage({ source: 'actio_registration', event: eventName, params: data }, '*'); } catch (e) {}
+    if (window.console && console.debug) console.debug('[GA4]', eventName, data);
+  }
+  function getAccountType() {
+    const el = document.querySelector('input[name="account_type"]:checked');
+    return el ? el.value : 'unknown';
+  }
+
+  // form_view — załadowanie formularza
+  track('form_view');
+
+  // ── Conditional fields toggle ──────────────────────
+  const radios = document.querySelectorAll('input[name="account_type"]');
+  const business = document.getElementById('cond-business');
+  const firmaInput = document.getElementById('f-firma');
+  const nipInput = document.getElementById('f-nip');
+
+  let _checkoutFired = false;
+  function applyAccountType(userInitiated) {
+    const v = getAccountType();
+    if (v === 'postpaid') {
+      business.classList.add('active');
+      firmaInput.setAttribute('required', '');
+      nipInput.setAttribute('required', '');
+    } else {
+      business.classList.remove('active');
+      firmaInput.removeAttribute('required');
+      nipInput.removeAttribute('required');
+    }
+    // begin_checkout — pierwszy świadomy wybór typu konta
+    if (userInitiated && !_checkoutFired) {
+      _checkoutFired = true;
+      track('begin_checkout', { value: 1, currency: 'PLN' });
+    } else if (userInitiated) {
+      // Zmiana typu po wcześniejszym wyborze — osobny event
+      track('select_account_type', { account_type: v });
+    }
+  }
+  radios.forEach(r => r.addEventListener('change', () => applyAccountType(true)));
+  applyAccountType(false);
+
+  // ── Show/hide password ─────────────────────────────
+  const pwInput = document.getElementById('f-haslo');
+  const pwToggle = document.getElementById('pw-toggle');
+  pwToggle.addEventListener('click', () => {
+    const isHidden = pwInput.type === 'password';
+    pwInput.type = isHidden ? 'text' : 'password';
+    pwToggle.textContent = isHidden ? 'Ukryj' : 'Pokaż';
+    pwToggle.setAttribute('aria-label', isHidden ? 'Ukryj hasło' : 'Pokaż hasło');
+  });
+
+  // ── Password strength meter ────────────────────────
+  const pwBar = document.getElementById('pw-bar');
+  function pwStrength(s) {
+    let score = 0;
+    if (s.length >= 8) score++;
+    if (s.length >= 12) score++;
+    if (/\d/.test(s)) score++;
+    if (/[a-z]/.test(s) && /[A-Z]/.test(s)) score++;
+    if (/[^\w\s]/.test(s)) score++;
+    return score; // 0-5
+  }
+  pwInput.addEventListener('input', e => {
+    const score = pwStrength(e.target.value);
+    const pct = (score / 5) * 100;
+    pwBar.style.width = pct + '%';
+    pwBar.style.background = score < 2 ? '#d32f2f' : score < 4 ? '#ee7f17' : '#2e7d32';
+  });
+
+  // ── Inline validation ───────────────────────────────
+  const validators = {
+    email: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),
+    tel: v => v.replace(/\D/g, '').length === 9,
+    nip: v => v.replace(/\D/g, '').length === 10,
+    kod: v => /^\d{2}-\d{3}$/.test(v),
+  };
+  const fieldRules = {
+    'f-email': 'email',
+    'f-telefon': 'tel',
+    'f-nip': 'nip',
+    'f-kod': 'kod',
+  };
+  Object.entries(fieldRules).forEach(([id, rule]) => {
+    const el = document.getElementById(id);
+    el.addEventListener('blur', () => {
+      if (!el.value) return;
+      const ok = validators[rule](el.value);
+      el.setAttribute('aria-invalid', ok ? 'false' : 'true');
+      if (!ok) track('form_field_error', { field: rule });
+    });
+    el.addEventListener('input', () => {
+      if (el.getAttribute('aria-invalid') === 'true') {
+        const ok = validators[rule](el.value);
+        if (ok) el.setAttribute('aria-invalid', 'false');
+      }
+    });
+  });
+
+  // generate_lead — gdy mamy poprawny email + telefon (lead bez submit)
+  let _leadFired = false;
+  function checkLead() {
+    if (_leadFired) return;
+    const emailEl = document.getElementById('f-email');
+    const telEl = document.getElementById('f-telefon');
+    if (validators.email(emailEl.value) && validators.tel(telEl.value)) {
+      _leadFired = true;
+      track('generate_lead', { value: 1, currency: 'PLN', lead_type: 'form_partial' });
+    }
+  }
+  document.getElementById('f-email').addEventListener('blur', checkLead);
+  document.getElementById('f-telefon').addEventListener('blur', checkLead);
+
+  // Auto-format kod pocztowy
+  document.getElementById('f-kod').addEventListener('input', e => {
+    let v = e.target.value.replace(/\D/g, '').slice(0, 5);
+    if (v.length > 2) v = v.slice(0, 2) + '-' + v.slice(2);
+    e.target.value = v;
+  });
+
+  // ── Submit handler ──────────────────────────────────
+  document.getElementById('reg-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const form = e.target;
+    const submitBtn = document.getElementById('submit-btn');
+
+    // add_payment_info — intent submitu (przed walidacją, tracujemy że user próbował)
+    track('add_payment_info', { value: 1, currency: 'PLN' });
+
+    // Walidacja required
+    const required = form.querySelectorAll('[required]');
+    let hasError = false;
+    const errorFields = [];
+    required.forEach(el => {
+      if (!el.value.trim() && el.offsetParent !== null) {
+        el.setAttribute('aria-invalid', 'true');
+        hasError = true;
+        errorFields.push(el.name || el.id);
+      }
+    });
+    if (hasError) {
+      track('form_submit_failed', { reason: 'missing_required', fields: errorFields.join(',') });
+      form.querySelector('[aria-invalid="true"]').focus();
+      return;
+    }
+
+    // ── Budowa payload ─────────────────────────────────
+    const accountType = getAccountType();
+    const endpoint = API_BASE_URL + (accountType === 'postpaid' ? ENDPOINT_COMPANY : ENDPOINT_USER);
+    const payload = Object.fromEntries(new FormData(form));
+    payload.account_type = accountType;
+    payload.zgoda_regulamin = form.querySelector('[name=zgoda_regulamin]').checked;
+    payload.zgoda_marketing = form.querySelector('[name=zgoda_marketing]').checked;
+
+    // reCAPTCHA v3 — odkomentuj gdy klucz w konfiguracji + skrypt grecaptcha załadowany
+    // if (RECAPTCHA_SITE_KEY && typeof grecaptcha !== 'undefined') {
+    //   payload.recaptcha_token = await grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'register' });
+    // }
+
+    // ── Submit do API ──────────────────────────────────
+    submitBtn.disabled = true;
+    const originalLabel = submitBtn.innerHTML;
+    submitBtn.innerHTML = 'Wysyłanie...';
+
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        // Spróbuj wyciągnąć komunikat błędu z response
+        let errMsg = 'Wystąpił błąd. Spróbuj ponownie lub zadzwoń: 61 648 9000.';
+        try {
+          const errData = await res.json();
+          if (errData.message) errMsg = errData.message;
+          else if (errData.error) errMsg = errData.error;
+          else if (errData.errors && Array.isArray(errData.errors)) errMsg = errData.errors.join('\n');
+        } catch (e) { /* response nie był JSON */ }
+        track('form_submit_failed', { reason: 'api_error', status: res.status });
+        alert(errMsg);
+        return;
+      }
+
+      const data = await res.json().catch(() => ({}));
+
+      // SUCCESS — event sign_up + generate_lead (zgodnie z GA4 conv setup na actio.pl)
+      track('sign_up', {
+        method: 'email',
+        value: 1,
+        currency: 'PLN',
+        user_id: data.user_id || data.id || undefined,
+      });
+      track('generate_lead', {
+        value: 1,
+        currency: 'PLN',
+        lead_type: 'form_submit',
+        form_id: 'actio_registration',
+      });
+
+      // Redirect — backend może zwrócić własny URL, inaczej fallback
+      window.location.href = data.redirect_url || SUCCESS_REDIRECT;
+
+    } catch (err) {
+      track('form_submit_failed', { reason: 'network_error', error: String(err).slice(0, 80) });
+      alert('Brak połączenia z serwerem. Sprawdź internet i spróbuj ponownie.');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalLabel;
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

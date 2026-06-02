@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>Witaj w Actio – potwierdź rejestrację</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Mulish:wght@400;500;600;700;800&display=swap');
+  @media only screen and (max-width: 620px) {
+    .email-container { width: 100% !important; max-width: 100% !important; }
+    .px-mobile { padding-left: 20px !important; padding-right: 20px !important; }
+  }
+</style>
+</head>
+<body style="margin:0; padding:0; background:#fafbfc; font-family:'Mulish', Arial, Helvetica, sans-serif; color:#1d2233; -webkit-font-smoothing:antialiased; line-height:1.5;">
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#fafbfc;">
+  <tr>
+    <td align="center" style="padding:32px 16px;">
+
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" class="email-container" style="width:600px; max-width:600px; background:#ffffff; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,0.06); overflow:hidden;">
+
+        <!-- Logo -->
+        <tr>
+          <td align="center" style="padding:32px 40px 24px 40px; background:#ffffff; border-bottom:1px solid #f2f2f2;" class="px-mobile">
+            <img src="https://actio.pl/wp-content/uploads/2025/09/ACTIO-LOGO-PODSTAWOWE.webp" alt="Actio" width="160" style="display:block; height:auto; max-width:160px;">
+          </td>
+        </tr>
+
+        <!-- Greeting -->
+        <tr>
+          <td style="padding:32px 40px 8px 40px;" class="px-mobile">
+            <h1 style="margin:0 0 8px 0; font-family:'Mulish', Arial, sans-serif; font-size:26px; font-weight:700; line-height:1.3; color:#1d2233; letter-spacing:-0.01em;">
+              Witaj w Actio!
+            </h1>
+            <p style="margin:0; font-size:16px; line-height:1.6; color:#38454a;">
+              Dziękujemy za rejestrację w systemie Actio. Jeszcze tylko jeden krok dzieli Cię od aktywacji konta.
+            </p>
+          </td>
+        </tr>
+
+        <!-- Dane konta -->
+        <tr>
+          <td style="padding:24px 40px 0 40px;" class="px-mobile">
+            <h2 style="margin:0 0 12px 0; font-family:'Mulish', Arial, sans-serif; font-size:18px; font-weight:700; color:#1d2233;">
+              Szczegóły Twojego konta
+            </h2>
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#fafbfc; border:1px solid #f2f2f2; border-radius:8px;">
+              <tr>
+                <td style="padding:18px 20px;">
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="font-size:15px; line-height:1.7;">
+                    <tr>
+                      <td style="color:#38454a; padding:4px 0; width:42%;">Twoje konto</td>
+                      <td style="color:#1d2233; font-weight:600; padding:4px 0;">tomasz@actio.pl</td>
+                    </tr>
+                    <tr>
+                      <td style="color:#38454a; padding:4px 0;">Typ konta</td>
+                      <td style="color:#1d2233; font-weight:600; padding:4px 0;">Indywidualne (Pre-paid)</td>
+                    </tr>
+                    <tr>
+                      <td style="color:#38454a; padding:4px 0;">Model rozliczeń</td>
+                      <td style="color:#1d2233; font-weight:600; padding:4px 0;">Prepaid</td>
+                    </tr>
+                    <tr>
+                      <td style="color:#38454a; padding:4px 0;">Strefa numeracyjna</td>
+                      <td style="color:#1d2233; font-weight:600; padding:4px 0;">22</td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- CTA potwierdź -->
+        <tr>
+          <td style="padding:28px 40px 0 40px; text-align:center;" class="px-mobile">
+            <p style="margin:0 0 16px 0; font-size:15px; line-height:1.6; color:#1d2233;">
+              Kliknij przycisk poniżej, aby potwierdzić rejestrację i aktywować konto:
+            </p>
+            <a href="https://rejestracja.actio.pl/registration_confirm/{{TOKEN}}" target="_blank" style="display:inline-block; padding:14px 32px; background:#ee7f17; color:#ffffff; text-decoration:none; border-radius:6px; font-family:'Mulish', Arial, sans-serif; font-size:15px; font-weight:700; letter-spacing:0.02em;">
+              Potwierdź rejestrację →
+            </a>
+            <p style="margin:16px 0 0 0; font-size:13px; line-height:1.6; color:#38454a;">
+              Lub skopiuj poniższy link do przeglądarki:
+            </p>
+            <p style="margin:8px 0 0 0; font-size:12px; line-height:1.5; color:#003388; word-break:break-all;">
+              <a href="https://rejestracja.actio.pl/registration_confirm/{{TOKEN}}" style="color:#003388; text-decoration:underline;">https://rejestracja.actio.pl/registration_confirm/{{TOKEN}}</a>
+            </p>
+          </td>
+        </tr>
+
+        <!-- Co dalej -->
+        <tr>
+          <td style="padding:32px 40px 0 40px;" class="px-mobile">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#fff8ee; border:1px solid #ffe1bf; border-radius:8px;">
+              <tr>
+                <td style="padding:16px 20px;">
+                  <p style="margin:0 0 6px 0; font-size:15px; font-weight:700; color:#1d2233;">
+                    Co czeka na Ciebie po aktywacji
+                  </p>
+                  <p style="margin:0; font-size:14px; line-height:1.6; color:#38454a;">
+                    Dane dostępowe (numer, hasło SIP, serwer), bonus testowy 1&nbsp;zł na rozmowy oraz panel klienta z pełną konfiguracją usługi.
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Kontakt -->
+        <tr>
+          <td style="padding:24px 40px 32px 40px;" class="px-mobile">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-top:1px solid #f2f2f2;">
+              <tr>
+                <td style="padding-top:24px;">
+                  <p style="margin:0 0 6px 0; font-size:14px; font-weight:700; color:#1d2233;">
+                    Link nie działa lub masz pytanie?
+                  </p>
+                  <p style="margin:0; font-size:14px; line-height:1.7; color:#38454a;">
+                    Email: <a href="mailto:bok@actio.pl" style="color:#003388; text-decoration:none; font-weight:600;">bok@actio.pl</a><br>
+                    Telefon: <a href="tel:+48616489000" style="color:#003388; text-decoration:none; font-weight:600;">+48 61 648 90 00</a>
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+      </table>
+
+      <!-- Stopka -->
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" class="email-container" style="width:600px; max-width:600px;">
+        <tr>
+          <td align="center" style="padding:24px 40px 8px 40px;" class="px-mobile">
+            <p style="margin:0; font-size:12px; line-height:1.6; color:#38454a;">
+              <strong style="color:#1d2233;">Syntell S.A.</strong><br>
+              Operator usług telekomunikacyjnych Actio<br>
+              Plac Wolności 18, 61-739 Poznań<br>
+              Tel: +48 61 648 90 00 | Fax: +48 61 648 90 05<br>
+              <a href="mailto:bok@actio.pl" style="color:#003388; text-decoration:none;">bok@actio.pl</a> | <a href="https://www.actio.pl" style="color:#003388; text-decoration:none;">www.actio.pl</a><br>
+              NIP: 7831703009 | KRS: 0000476527
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding:12px 40px 0 40px;" class="px-mobile">
+            <p style="margin:0; font-size:11px; line-height:1.5; color:#999999;">
+              Otrzymujesz tę wiadomość ponieważ na powyższy adres została wysłana rejestracja konta Actio. Jeśli to nie Ty – zignoruj tego maila, link wygaśnie automatycznie po 48 godzinach.
+            </p>
+          </td>
+        </tr>
+      </table>
+
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
