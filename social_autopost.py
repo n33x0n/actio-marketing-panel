@@ -289,27 +289,40 @@ ZASADY KANAŁU:
 NIE POWTARZAJ tych ostatnich postów (inny kąt, inne słowa):
 {recent_block}
 
-Zwróć WYŁĄCZNIE czysty JSON (bez ```):
-{{
-  "body": "treść posta (bez linku, bez hashtagów)",
-  "hashtags": ["#tag1", "#tag2"],
-  "angle": "5-8 słów: konkretny kąt/hook tego posta (po polsku)",
-  "image_brief": "krótki opis sceny na grafikę + propozycja 3-6 słów nagłówka PL (realistyczne zdjęcie biznesowe, kontekst usługi/branży)"
-}}"""
+Zwróć DOKŁADNIE w tym formacie, każda sekcja po swoim znaczniku (bez JSON, bez ```):
+<<<BODY>>>
+treść posta (może być wielolinijkowa, BEZ linku, BEZ hashtagów)
+<<<HASHTAGS>>>
+#tag1 #tag2 #tag3
+<<<ANGLE>>>
+5-8 słów: konkretny kąt/hook tego posta (po polsku)
+<<<IMAGE>>>
+krótki opis sceny na grafikę + 3-6 słów nagłówka PL (realistyczne zdjęcie biznesowe, kontekst usługi/branży)"""
+
+
+def _parse_sections(raw: str) -> dict:
+    import re
+    out = {"body": "", "hashtags": "", "angle": "", "image": ""}
+    parts = re.split(r"<<<\s*(BODY|HASHTAGS|ANGLE|IMAGE)\s*>>>", raw)
+    for i in range(1, len(parts) - 1, 2):
+        out[parts[i].lower()] = parts[i + 1].strip()
+    return out
 
 
 def generate_copy(slot: dict, channel: str) -> dict:
     path = DB()
     recent = db.fetch_recent_social_topics(path, channel, 7)
-    parsed = ap._parse_llm_output(ap._call_llm(_build_social_prompt(slot, channel, recent)))
-    angle = (parsed.get("angle") or "").strip()
+    sec = _parse_sections(ap._call_llm(_build_social_prompt(slot, channel, recent)))
+    angle = sec["angle"].strip()
     sig = f"{angle} {slot.get('industry') or ''}"
     if angle and ap._is_topic_repeat(sig, recent):
         note = "\n\nUWAGA: poprzedni wariant był zbyt podobny do ostatnich postów. Zmień kąt i słownictwo."
-        parsed = ap._parse_llm_output(ap._call_llm(_build_social_prompt(slot, channel, recent) + note))
-        angle = (parsed.get("angle") or "").strip()
-    body = parsed["body"].strip()
-    tags = parsed.get("hashtags") or []
+        sec = _parse_sections(ap._call_llm(_build_social_prompt(slot, channel, recent) + note))
+        angle = sec["angle"].strip()
+    body = sec["body"].strip().strip("`").strip()
+    if not body:
+        raise ValueError(f"Pusty body z LLM (parse fail): {sec}")
+    tags = [t for t in sec["hashtags"].replace(",", " ").split() if t.strip()]
     tags_str = " ".join(t if t.startswith("#") else f"#{t}" for t in tags)
     if channel == "facebook":
         final = f"{body}\n\n🔗 {_link_utm(slot['pillar'])}"
@@ -323,7 +336,7 @@ def generate_copy(slot: dict, channel: str) -> dict:
         "copy": final,
         "hashtags": json.dumps(tags, ensure_ascii=False),
         "link_utm": link,
-        "image_brief": parsed.get("image_brief", body[:120]),
+        "image_brief": sec["image"].strip() or body[:120],
         "angle": angle,
         "topic_tokens": " ".join(sorted(ap._topic_tokens(angle, slot.get("industry") or ""))),
     }
