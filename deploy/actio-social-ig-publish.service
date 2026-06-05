@@ -1,0 +1,13 @@
+[Unit]
+Description=Actio Social — Instagram publisher (kolejka social_posts → Graph API)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/opt/actio-marketing-panel
+ExecStart=/root/.local/bin/uv run python -c "import social_publish; print(social_publish.run_ig_due_queue())"
+StandardOutput=append:/opt/actio-marketing-panel/logs/social-ig-publish.log
+StandardError=append:/opt/actio-marketing-panel/logs/social-ig-publish.err.log
+TimeoutStartSec=10m

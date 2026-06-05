@@ -172,6 +172,32 @@ CREATE TABLE IF NOT EXISTS alerts_log (
 
 CREATE INDEX IF NOT EXISTS idx_alerts_log_time ON alerts_log(triggered_at);
 CREATE INDEX IF NOT EXISTS idx_alerts_log_resolved ON alerts_log(resolved);
+
+CREATE TABLE IF NOT EXISTS social_posts (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    created_at      TEXT    NOT NULL DEFAULT (datetime('now')),
+    channel         TEXT    NOT NULL,            -- 'facebook' | 'instagram'
+    scheduled_time  TEXT    NOT NULL,            -- ISO local (Europe/Warsaw), np. '2026-06-07 09:00'
+    slot_intent     TEXT    NOT NULL DEFAULT '', -- 'am_edu' | 'pm_cta'
+    pillar          TEXT    NOT NULL,
+    format          TEXT    NOT NULL,
+    industry        TEXT,
+    topic_tokens    TEXT    NOT NULL DEFAULT '',
+    copy            TEXT    NOT NULL DEFAULT '',
+    hashtags        TEXT    NOT NULL DEFAULT '[]',
+    link_utm        TEXT,
+    image_path      TEXT,
+    image_brief     TEXT,
+    fb_post_id      TEXT,
+    ig_creation_id  TEXT,
+    ig_media_id     TEXT,
+    status          TEXT    NOT NULL DEFAULT 'generated', -- generated|scheduled|queued|published|failed|skipped
+    published_at    TEXT,
+    error_log       TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_social_status ON social_posts(status);
+CREATE INDEX IF NOT EXISTS idx_social_chan_time ON social_posts(channel, scheduled_time);
 """
 
 # Kolumny dodawane via ALTER TABLE (jeśli istnieje stara wersja DB)
@@ -708,3 +734,85 @@ def fetch_gsc_top_pages(
     params.append(int(top))
     with _connect(path) as conn:
         return pd.read_sql_query(sql, conn, params=params)
+
+
+# === SOCIAL POSTS (FB + IG autopost) ===
+
+_SOCIAL_INSERT_COLS = [
+    "channel", "scheduled_time", "slot_intent", "pillar", "format", "industry",
+    "topic_tokens", "copy", "hashtags", "link_utm", "image_path", "image_brief",
+    "fb_post_id", "ig_creation_id", "ig_media_id", "status",
+]
+
+
+def insert_social_post(path: str, row: dict) -> int:
+    cols = [c for c in _SOCIAL_INSERT_COLS if c in row]
+    placeholders = ",".join(f":{c}" for c in cols)
+    sql = f"INSERT INTO social_posts ({','.join(cols)}) VALUES ({placeholders})"
+    payload = {c: row.get(c) for c in cols}
+    with _connect(path) as conn:
+        cur = conn.execute(sql, payload)
+        return cur.lastrowid
+
+
+def update_social_post(path: str, post_id: int, **fields) -> None:
+    if not fields:
+        return
+    set_clause = ", ".join(f"{k} = :{k}" for k in fields)
+    fields["_id"] = post_id
+    sql = f"UPDATE social_posts SET {set_clause} WHERE id = :_id"
+    with _connect(path) as conn:
+        conn.execute(sql, fields)
+
+
+def fetch_social_post(path: str, post_id: int) -> dict | None:
+    with _connect(path) as conn:
+        conn.row_factory = sqlite3.Row
+        cur = conn.execute("SELECT * FROM social_posts WHERE id = ?", (post_id,))
+        r = cur.fetchone()
+        return dict(r) if r else None
+
+
+def fetch_social_posts(path: str, channel: str | None = None, status: str | None = None, limit: int = 500) -> list[dict]:
+    where, params = [], []
+    if channel:
+        where.append("channel = ?"); params.append(channel)
+    if status:
+        where.append("status = ?"); params.append(status)
+    clause = ("WHERE " + " AND ".join(where)) if where else ""
+    params.append(int(limit))
+    with _connect(path) as conn:
+        conn.row_factory = sqlite3.Row
+        cur = conn.execute(
+            f"SELECT * FROM social_posts {clause} ORDER BY scheduled_time ASC LIMIT ?", params
+        )
+        return [dict(r) for r in cur.fetchall()]
+
+
+def fetch_due_ig_posts(path: str, now_iso: str, limit: int = 20) -> list[dict]:
+    """Posty IG do opublikowania: channel='instagram', status='queued', scheduled_time <= now."""
+    with _connect(path) as conn:
+        conn.row_factory = sqlite3.Row
+        cur = conn.execute(
+            """SELECT * FROM social_posts
+               WHERE channel = 'instagram' AND status = 'queued' AND scheduled_time <= ?
+               ORDER BY scheduled_time ASC LIMIT ?""",
+            (now_iso, int(limit)),
+        )
+        return [dict(r) for r in cur.fetchall()]
+
+
+def fetch_recent_social_topics(path: str, channel: str, limit: int = 7) -> list[dict]:
+    """Ostatnie N postów danego kanału — dla semantycznego dedup (_is_topic_repeat).
+
+    Zwraca dicts z kluczem 'keyword' = zapisane topic_tokens (space-joined), tak by
+    autopublish._is_topic_repeat mógł je z powrotem stokenizować bez modyfikacji.
+    """
+    with _connect(path) as conn:
+        cur = conn.execute(
+            """SELECT topic_tokens, pillar, copy
+               FROM social_posts WHERE channel = ?
+               ORDER BY id DESC LIMIT ?""",
+            (channel, int(limit)),
+        )
+        return [{"keyword": r[0] or "", "slug": r[1] or "", "title": ""} for r in cur.fetchall()]

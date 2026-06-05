@@ -1,0 +1,9 @@
+[Unit]
+Description=Run Actio Instagram publisher every 15 min (kolejka IG)
+
+[Timer]
+OnCalendar=*:0/15
+Persistent=true
+
+[Install]
+WantedBy=timers.target

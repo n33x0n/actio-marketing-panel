@@ -37,6 +37,12 @@ _panel_dir = pathlib.Path(__file__).parent / "panel-demo"
 if _panel_dir.exists():
     app.mount("/panel", StaticFiles(directory=str(_panel_dir), html=True), name="panel")
 
+# Grafiki social (FB+IG) – publiczny URL dla Instagram Content Publishing API (image_url).
+# Pod /autopost/ → omija Cloudflare Access (jak SMS webhook), więc Meta może pobrać obrazek.
+_social_img_dir = pathlib.Path(__file__).parent / "autopost_images" / "social"
+_social_img_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/autopost/img", StaticFiles(directory=str(_social_img_dir)), name="social_img")
+
 
 def _db_path() -> str:
     val = os.environ.get("DB_PATH")
