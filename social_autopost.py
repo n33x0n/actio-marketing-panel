@@ -266,14 +266,16 @@ def _build_social_prompt(slot: dict, channel: str, recent: list[dict]) -> str:
     ind_line = f"- Branża / kontekst odbiorcy: {ind}\n" if ind else ""
     fmt_instr = FORMATS[slot["format"]]
     recent_block = "\n".join(f"- {r.get('slug','')}: {r.get('keyword','')[:80]}" for r in recent) or "(brak)"
+    _tag_rule = ("Hashtagi: każdy = jeden wyraz, lowercase, BEZ polskich znaków (ą→a, ł→l, ż→z...), "
+                 "BEZ spacji w środku, oddzielone spacją. Marka to #actio (nie #aktio).")
     if channel == "facebook":
         ch_rules = ("- To post na FACEBOOK. NIE wstawiaj URL ani hashtagów w 'body' (dodam je osobno).\n"
                     "- 3-6 krótkich linijek, można 1-2 emoji, zakończ miękkim CTA bez linku.\n"
-                    "- hashtags: 3-5 sztuk, po polsku, bez spacji.")
+                    f"- hashtags: 3-5 sztuk. {_tag_rule}")
     else:
         ch_rules = ("- To post na INSTAGRAM. NIE wstawiaj URL w 'body' (link jest w bio).\n"
                     "- 3-6 krótkich linijek, można emoji, zakończ CTA typu 'Napisz' / 'Sprawdź – link w bio'.\n"
-                    "- hashtags: 8-15 sztuk, po polsku, mix ogólnych i niszowych, bez spacji.")
+                    f"- hashtags: 8-15 sztuk, mix ogólnych i niszowych. {_tag_rule}")
     return f"""Jesteś social media managerem Actio (polski operator VoIP B2B, marka SYNTELL S.A., od 1996; klienci m.in. grupa PGE, Koleje Wielkopolskie).
 
 Napisz JEDEN krótki post sprzedażowo-edukacyjny.
