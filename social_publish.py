@@ -104,34 +104,121 @@ def to_unix_waw(when: str | datetime.datetime) -> int:
     return int(dt.replace(tzinfo=WAW).timestamp())
 
 
-def schedule_fb_photo_post(image_path: str, caption: str, when: str, page_token: str | None = None) -> dict:
-    """Zaplanuj post FB z grafiką (photo + caption + scheduled_publish_time).
+def _upload_unpublished_photo(image_path: str, page_token: str) -> str:
+    """Wgraj grafikę jako NIEopublikowane zdjęcie (do attached_media). Zwróć photo_id."""
+    page_id = _env("META_PAGE_ID")
+    with open(image_path, "rb") as fh:
+        r = httpx.post(
+            f"{GRAPH}/{page_id}/photos",
+            data={"published": "false", "access_token": page_token},
+            files={"source": fh},
+            timeout=120.0,
+        )
+    j = r.json()
+    if r.status_code >= 400:
+        raise RuntimeError("photo upload: " + json.dumps(j.get("error", j))[:300])
+    return j["id"]
 
-    Zwraca {ok, post_id, error}. Caption zawiera link UTM jako tekst (post /photos
-    nie ma klikalnej karty OG, link leci w treści).
+
+def schedule_fb_photo_post(image_path: str, caption: str, when: str, page_token: str | None = None) -> dict:
+    """Zaplanuj post FB ze zdjęciem jako natywny post FEED (widoczny w Business Suite Planner).
+
+    Metoda: upload nieopublikowanego zdjęcia → POST /{page}/feed z attached_media + published=false
+    + scheduled_publish_time. NIE używamy /{page}/photos (te nie pokazują się w Plannerze).
+    Caption zawiera link UTM jako tekst. Zwraca {ok, post_id, photo_id, error}.
     """
     page_token = page_token or get_page_token()
     page_id = _env("META_PAGE_ID")
     ts = to_unix_waw(when)
     try:
-        with open(image_path, "rb") as fh:
-            r = httpx.post(
-                f"{GRAPH}/{page_id}/photos",
-                data={
-                    "caption": caption,
-                    "published": "false",
-                    "scheduled_publish_time": str(ts),
-                    "access_token": page_token,
-                },
-                files={"source": fh},
-                timeout=120.0,
-            )
+        photo_id = _upload_unpublished_photo(image_path, page_token)
+        r = httpx.post(
+            f"{GRAPH}/{page_id}/feed",
+            data={
+                "message": caption,
+                "attached_media[0]": json.dumps({"media_fbid": photo_id}),
+                "published": "false",
+                "scheduled_publish_time": str(ts),
+                "access_token": page_token,
+            },
+            timeout=90.0,
+        )
         j = r.json()
         if r.status_code >= 400:
             return {"ok": False, "error": json.dumps(j.get("error", j))[:400]}
-        return {"ok": True, "post_id": j.get("id") or j.get("post_id")}
+        return {"ok": True, "post_id": j.get("id"), "photo_id": photo_id}
     except Exception as e:
         return {"ok": False, "error": f"{type(e).__name__}: {e}"}
+
+
+def delete_post(post_id: str, page_token: str | None = None) -> tuple[bool, str]:
+    """Usuń post/scheduled post (DELETE /{id})."""
+    page_token = page_token or get_page_token()
+    r = httpx.request("DELETE", f"{GRAPH}/{post_id}", params={"access_token": page_token}, timeout=60.0)
+    return r.status_code < 400, r.text[:200]
+
+
+def _scheduled_photo_index(page_token: str) -> list[dict]:
+    """Lista zaplanowanych postów typu photo: {id, when16, msg}."""
+    page_id = _env("META_PAGE_ID")
+    out = []
+    url = f"{GRAPH}/{page_id}/scheduled_posts"
+    params = {"fields": "id,scheduled_publish_time,message,attachments{media_type}", "access_token": page_token, "limit": 100}
+    for _ in range(10):
+        r = httpx.get(url, params=params, timeout=60.0)
+        r.raise_for_status()
+        j = r.json()
+        for p in j.get("data", []):
+            att = p.get("attachments", {}).get("data", [{}])
+            mt = att[0].get("media_type") if att else None
+            if mt != "photo":
+                continue
+            t = p.get("scheduled_publish_time")
+            when16 = datetime.datetime.fromtimestamp(int(t), WAW).strftime("%Y-%m-%d %H:%M") if t else ""
+            out.append({"id": p["id"], "when16": when16, "msg": p.get("message", "") or ""})
+        nxt = j.get("paging", {}).get("next")
+        if not nxt:
+            break
+        url, params = nxt, {}
+    return out
+
+
+def reschedule_fb_as_feed(limit: int | None = None) -> dict:
+    """Przeplanuj MOJE zaplanowane posty FB foto (/photos) na widoczne /feed+attached_media.
+
+    Dopasowanie do social_posts po (scheduled_time, prefiks message). NIE rusza obcych/starych
+    foto-postów ani link-postów. Uruchamiać NA MIKRUSIE (tam social_posts).
+    """
+    path = db_path()
+    db.init_db(path)
+    page_token = get_page_token()
+    sched = _scheduled_photo_index(page_token)
+    mine = db.fetch_social_posts(path, channel="facebook", status="scheduled")
+    stats = {"converted": 0, "skipped_nomatch": 0, "errors": 0}
+    used_ids = set()
+    for m in mine:
+        if limit and stats["converted"] >= limit:
+            break
+        when16 = m["scheduled_time"][:16]
+        match = next((s for s in sched if s["id"] not in used_ids
+                      and s["when16"] == when16 and s["msg"][:25] == m["copy"][:25]), None)
+        if not match:
+            stats["skipped_nomatch"] += 1
+            continue
+        used_ids.add(match["id"])
+        ok_del, _ = delete_post(match["id"], page_token)
+        res = schedule_fb_photo_post(m["image_path"], m["copy"], m["scheduled_time"], page_token)
+        if res.get("ok"):
+            db.update_social_post(path, m["id"], fb_post_id=res["post_id"])
+            stats["converted"] += 1
+            print(f"  ✓ {when16} przeplanowany (del={ok_del}) → {res['post_id']}")
+        else:
+            db.update_social_post(path, m["id"], error_log="reschedule: " + str(res.get("error")))
+            stats["errors"] += 1
+            print(f"  ✗ {when16} BŁĄD: {res.get('error')}")
+        time.sleep(2)
+    print(f"reschedule_fb_as_feed: {stats}")
+    return stats
 
 
 def list_fb_scheduled(page_token: str | None = None) -> list[dict]:
