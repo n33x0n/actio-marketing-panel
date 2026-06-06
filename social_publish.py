@@ -199,6 +199,8 @@ def reschedule_fb_as_feed(limit: int | None = None) -> dict:
     for m in mine:
         if limit and stats["converted"] >= limit:
             break
+        if "_" in (m.get("fb_post_id") or ""):  # już skonwertowany na /feed (id z podkreśleniem)
+            continue
         when16 = m["scheduled_time"][:16]
         match = next((s for s in sched if s["id"] not in used_ids
                       and s["when16"] == when16 and s["msg"][:25] == m["copy"][:25]), None)
