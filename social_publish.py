@@ -348,5 +348,43 @@ def run_ig_due_queue() -> dict:
     return results
 
 
+def fix_emdash(limit: int | None = None) -> dict:
+    """Zamień pauzę (—) na półpauzę (–): FB zaplanowane = edycja message w miejscu (POST /{id}),
+    IG w kolejce = tylko DB (cron użyje poprawionej treści). NIE rusza opublikowanych.
+    Uruchamiać NA MIKRUSIE."""
+    EM, EN = "—", "–"
+    path = db_path()
+    db.init_db(path)
+    page_token = get_page_token()
+    stats = {"fb_edited": 0, "fb_err": 0, "ig_db": 0}
+    for r in db.fetch_social_posts(path, channel="facebook", status="scheduled"):
+        if EM not in (r["copy"] or ""):
+            continue
+        if limit and stats["fb_edited"] >= limit:
+            break
+        new = r["copy"].replace(EM, EN)
+        pid = r["fb_post_id"]
+        try:
+            resp = httpx.post(f"{GRAPH}/{pid}", data={"message": new, "access_token": page_token}, timeout=60.0)
+            if resp.status_code < 400:
+                db.update_social_post(path, r["id"], copy=new)
+                stats["fb_edited"] += 1
+                print(f"  ✓ FB {r['scheduled_time']} message zaktualizowany ({pid})")
+            else:
+                stats["fb_err"] += 1
+                print(f"  ✗ FB {r['scheduled_time']} {resp.text[:200]}")
+        except Exception as e:
+            stats["fb_err"] += 1
+            print(f"  ✗ FB {r['scheduled_time']} {type(e).__name__}: {e}")
+        time.sleep(1)
+    if not limit:
+        for r in db.fetch_social_posts(path, channel="instagram", status="queued"):
+            if EM in (r["copy"] or ""):
+                db.update_social_post(path, r["id"], copy=r["copy"].replace(EM, EN))
+                stats["ig_db"] += 1
+    print(f"fix_emdash: {stats}")
+    return stats
+
+
 if __name__ == "__main__":
     print(run_ig_due_queue())

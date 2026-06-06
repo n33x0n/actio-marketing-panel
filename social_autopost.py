@@ -288,6 +288,8 @@ FORMAT posta: {slot['format']} — {fmt_instr}
 ZASADY KANAŁU:
 {ch_rules}
 
+STYL: nie używaj długiego myślnika / pauzy (—). Jedyny dozwolony myślnik to półpauza (–).
+
 NIE POWTARZAJ tych ostatnich postów (inny kąt, inne słowa):
 {recent_block}
 
@@ -321,7 +323,7 @@ def generate_copy(slot: dict, channel: str) -> dict:
         note = "\n\nUWAGA: poprzedni wariant był zbyt podobny do ostatnich postów. Zmień kąt i słownictwo."
         sec = _parse_sections(ap._call_llm(_build_social_prompt(slot, channel, recent) + note))
         angle = sec["angle"].strip()
-    body = sec["body"].strip().strip("`").strip()
+    body = sec["body"].strip().strip("`").strip().replace("—", "–")  # pauza → półpauza
     if not body:
         raise ValueError(f"Pusty body z LLM (parse fail): {sec}")
     tags = [t for t in sec["hashtags"].replace(",", " ").split() if t.strip()]
