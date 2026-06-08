@@ -175,6 +175,12 @@ function actio_organization_node(): array {
             ['@type' => 'PropertyValue', 'name' => 'KRS',   'value' => ACTIO_KRS],
             ['@type' => 'PropertyValue', 'name' => 'REGON', 'value' => ACTIO_REGON],
         ],
+        'sameAs'       => [
+            'https://www.wikidata.org/wiki/Q140132189',
+            'https://aleo.com/int/company/syntell-spolka-akcyjna',
+            'https://opencorporates.com/companies/pl/0000476527',
+            'https://rejestr.io/krs/476527',
+        ],
         'address'      => actio_postal_address(),
         'contactPoint' => actio_contact_points(),
         'areaServed'   => ['@type' => 'Country', 'name' => 'Polska'],
