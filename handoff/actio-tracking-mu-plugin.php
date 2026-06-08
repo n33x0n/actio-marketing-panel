@@ -372,12 +372,24 @@ add_action( 'wp_footer', function() {
         } catch (err) { /* swallow */ }
     }, true);
 
+    // ─── Normalizacja numeru do E.164 (+48 dla PL) ─────────────────────
+    // Fix: linki tel: na stronie bywają bez prefiksu (np. tel:616489000) → GA4 pokazywał błędne "+616489000".
+    function actioNormalizePhone(raw) {
+        var p = (raw || '').replace(/^tel:/i, '').replace(/[^\d+]/g, '');  // zostaw cyfry i +
+        if (p.indexOf('00') === 0) p = '+' + p.slice(2);                   // 0048... -> +48...
+        if (p.charAt(0) === '+') return p;                                  // ma już kod kraju
+        var d = p.replace(/\D/g, '');
+        if (d.length === 9) return '+48' + d;                               // PL lokalny 9-cyfrowy (616489000)
+        if (d.length === 11 && d.indexOf('48') === 0) return '+' + d;       // 48XXXXXXXXX
+        return d ? '+' + d : '';
+    }
+
     // ─── Listener: phone clicks `tel:*` ─────────────────────────────────
     document.addEventListener('click', function(e) {
         var link = e.target.closest && e.target.closest('a[href^="tel:"]');
         if (!link) return;
         var href = link.getAttribute('href') || '';
-        var phone = href.replace(/^tel:/i, '').replace(/[\s\-\(\)]/g, '');
+        var phone = actioNormalizePhone(href);
         var text = (link.innerText || link.textContent || '').trim().substring(0, 100);
         fireLead({
             lead_type: 'phone',
@@ -398,7 +410,7 @@ add_action( 'wp_footer', function() {
             form_id: String((e.detail && e.detail.contactFormId) || ''),
             form_location: window.location.pathname,
             email: emailInput ? (emailInput.value || '') : '',
-            phone_number: phoneInput ? (phoneInput.value || '').replace(/[\s\-\(\)]/g, '') : '',
+            phone_number: phoneInput ? actioNormalizePhone(phoneInput.value || '') : '',
         });
     }, true);
 
