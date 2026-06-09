@@ -57,11 +57,19 @@ Jeśli kampania jest ENABLED w live state — NIE sugeruj jej pauzowania ze wzgl
 Realny lead-event w GA4 to `generate_lead` (klik tel: + submit form na /kontakt/ + form na landingach inline).
 Lead source (`generate_lead`) jest poprawnie skonfigurowany.
 
-KRYTYCZNY KONTEKST — NIE flaguj poniższego jako awarii:
-- 30.05.2026 ŚWIADOMIE usunęliśmy regułę GA4 zawyżającą `generate_lead` ~7× (86% było fałszywe: page_view na /kontakt → generate_lead) + dedup tagów GTM.
-- Dlatego conv/`generate_lead` SPADŁY skokowo ok. 30.05 (np. google/cpc z 20-60/dzień do 1-3/dzień). To ZAMIERZONA de-inflacja, NIE uszkodzony tracking. NIE pisz „uszkodzony tracking" / „collapse konwersji", NIE rekomenduj „diagnozuj tracking".
-- Realny baseline po de-inflacji: ~42 leady/mies ≈ 12-13/tydz ≈ 2-5/dzień (phone+form+registration). To NORMA — nie alarmuj że „za mało leadów".
-- Okno 7d obejmujące dni sprzed 30.05 ma ZAWYŻONE conv (fake'i). NIE używaj per-kampania conv ani ROAS z brudnego okna (przed 30.05) do rekomendacji skalowania budżetu — czysty sygnał liczy się dopiero od 30.05.
+### KRYTYCZNY KONTEKST — incydenty i decyzje właściciela (źródło prawdy, aktualizowane na bieżąco)
+Poniższy dziennik NADPISUJE wnioski z danych. NIE flaguj opisanych incydentów jako nowych awarii.
+NIE dawaj rekomendacji sprzecznych ze „stałymi decyzjami właściciela" — zostały już rozważone i odrzucone/postanowione.
+Jeśli aktywny incydent pomiaru obejmuje część okna 7d, każdą liczbę konwersji z tego okna traktuj jako artefakt i zaznacz to wprost.
+
+{cmo_context}
+
+### ZASADY WNIOSKOWANIA (twarde, nie łam ich)
+- Rekomendację „zwiększ budżet" wolno dać TYLKO gdy lost_budget_pct > 10. Gdy kampania traci na rankingu (lost_rank_pct >> lost_budget_pct), dźwignią są STAWKI lub QS — nie budżet.
+- Kampanie DEMAND_GEN nie mają metryk IS/lost_rank/lost_budget (specyfika kanału) — wartości 0 to „nie dotyczy", nie problem.
+- Rekomendacje dot. QS opieraj WYŁĄCZNIE o komponenty QS z LIVE state (trafność reklamy / jakość strony docelowej / przewidywany CTR): wskazuj komponent BELOW_AVERAGE. Jeśli trafność reklamy jest ABOVE_AVERAGE, NIE sugeruj przepisywania reklam — problem leży gdzie indziej.
+- Zanim zarekomendujesz negatyw dla search terma, sprawdź w LIVE state czy identyczny/nadrzędny negatyw już istnieje ORAZ czy data search terma nie jest sprzed dodania negatywu.
+- Nie rekomenduj pauzowania/wznawiania/zmian budżetu kampanii wymienionych w „stałych decyzjach" powyżej.
 
 Mając poniższe dane, napisz **krótki raport po polsku** w formacie markdown z trzema sekcjami:
 
@@ -192,6 +200,21 @@ def run_all_syncs() -> dict[str, str]:
     return results
 
 
+def _load_cmo_context() -> str:
+    """Żywy dziennik incydentów/decyzji (cmo_context.md obok skryptu).
+
+    Aktualizowany przy każdej zmianie na koncie / decyzji właściciela —
+    dzięki temu raport nie rekomenduje rzeczy już odrzuconych i nie czyta
+    artefaktów pomiaru jako spadków wydajności.
+    """
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cmo_context.md")
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return fh.read().strip()
+    except OSError:
+        return "(brak pliku cmo_context.md — brak kontekstu incydentów/decyzji)"
+
+
 def collect_data_summary() -> dict[str, str]:
     db_path = _env("DB_PATH")
     ads_customer = _env("GOOGLE_ADS_CUSTOMER_ID", "")
@@ -236,6 +259,7 @@ def collect_data_summary() -> dict[str, str]:
 
     return {
         "date": datetime.date.today().isoformat(),
+        "cmo_context": _load_cmo_context(),
         "live_account_state": live_state,
         "ga4_conversions_by_source": _md(ga4_df),
         "ga4_conversions_by_source_prev": _md(ga4_prev_df),

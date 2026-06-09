@@ -22,6 +22,28 @@ DRY_SPEND_DAYS = 2
 DRY_SPEND_MIN_CLICKS = 50
 EARLY_BURN_PCT = 0.80
 
+INCIDENT_NOTE = "[okno incydentu pomiaru — conv niedoszacowane, NIE podejmuj decyzji budżetowych]"
+
+
+def _measurement_incident_active() -> bool:
+    """True gdy cmo_context.md deklaruje aktywny incydent pomiaru.
+
+    Plik zaczyna się linią `measurement_incident_until: YYYY-MM-DD`.
+    W oknie incydentu alerty conv-based (DRY_SPEND/CPA) to artefakty
+    pomiaru — logujemy je z adnotacją, ale bez emergency pusha.
+    """
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cmo_context.md")
+    try:
+        with open(path, encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if line.startswith("measurement_incident_until:"):
+                    until = datetime.date.fromisoformat(line.split(":", 1)[1].strip())
+                    return datetime.date.today() <= until
+    except (OSError, ValueError):
+        pass
+    return False
+
 
 def _send_emergency(title: str, message: str) -> None:
     if not os.environ.get("PUSHOVER_USER_KEY"):
@@ -50,6 +72,8 @@ def check_thresholds(db_path: str) -> list[dict]:
     if df.empty:
         return triggered
 
+    incident = _measurement_incident_active()
+
     for _, row in df.iterrows():
         name = row["campaign_name"]
         clicks = float(row.get("clicks", 0) or 0)
@@ -59,17 +83,21 @@ def check_thresholds(db_path: str) -> list[dict]:
         if conv > 0:
             cpa = cost / conv
             if cpa > CPA_MAX_PLN:
-                triggered.append({"campaign": name, "type": "CPA",
+                triggered.append({"campaign": name, "type": "CPA", "conv_based": True,
                                   "msg": f"{name}: CPA {cpa:.2f} zł (>{CPA_MAX_PLN} zł), {conv:.1f} konwersji / {cost:.2f} zł"})
 
         if clicks >= DRY_SPEND_MIN_CLICKS and conv == 0:
-            triggered.append({"campaign": name, "type": "DRY_SPEND",
+            triggered.append({"campaign": name, "type": "DRY_SPEND", "conv_based": True,
                               "msg": f"{name}: {int(clicks)} kliknięć / {cost:.2f} zł / 0 konwersji w 7 dni"})
 
     triggered.extend(_check_policy())
 
     for alert in triggered:
-        _send_emergency(f"Actio Ads: {alert['type']}", alert["msg"])
+        gated = incident and alert.pop("conv_based", False)
+        if gated:
+            alert["msg"] = f"{alert['msg']} {INCIDENT_NOTE}"
+        else:
+            _send_emergency(f"Actio Ads: {alert['type']}", alert["msg"])
         try:
             db.insert_alert(db_path, alert["type"], alert["msg"], alert.get("campaign"))
         except Exception:

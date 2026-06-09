@@ -67,7 +67,38 @@ def fetch_live_account_state(customer_id: str) -> str:
         if kws:
             negs_md.append(f"- **{cn}** ({len(kws)}): {', '.join(kws[:25])}{' ...' if len(kws) > 25 else ''}")
 
-    return "\n".join(camps_md) + "\n" + "\n".join(negs_md)
+    # 3. Komponenty Quality Score — pokazują KTÓRE ogniwo ciągnie QS w dół
+    #    (trafność reklamy vs strona docelowa vs przew. CTR), żeby model nie
+    #    zgadywał przyczyny niskiego QS.
+    q = """
+        SELECT campaign.name, ad_group_criterion.keyword.text,
+               ad_group_criterion.keyword.match_type,
+               ad_group_criterion.quality_info.quality_score,
+               ad_group_criterion.quality_info.creative_quality_score,
+               ad_group_criterion.quality_info.post_click_quality_score,
+               ad_group_criterion.quality_info.search_predicted_ctr
+        FROM keyword_view
+        WHERE ad_group_criterion.status = 'ENABLED'
+          AND campaign.status = 'ENABLED'
+          AND ad_group_criterion.quality_info.quality_score > 0
+        ORDER BY ad_group_criterion.quality_info.quality_score
+    """
+    qs_md = ["", "**Quality Score — komponenty (ENABLED keywords):**",
+             "| Kampania | Keyword | QS | Trafność reklamy | Strona docelowa | Przew. CTR |",
+             "|---|---|---|---|---|---|"]
+    n_qs = 0
+    for r in ga.search(customer_id=customer_id, query=q):
+        qi = r.ad_group_criterion.quality_info
+        mt = r.ad_group_criterion.keyword.match_type.name[0]
+        qs_md.append(
+            f"| {r.campaign.name} | {r.ad_group_criterion.keyword.text}[{mt}] | {qi.quality_score} "
+            f"| {qi.creative_quality_score.name} | {qi.post_click_quality_score.name} "
+            f"| {qi.search_predicted_ctr.name} |")
+        n_qs += 1
+    if n_qs == 0:
+        qs_md.append("| (brak danych QS) | | | | | |")
+
+    return "\n".join(camps_md) + "\n" + "\n".join(negs_md) + "\n" + "\n".join(qs_md)
 
 
 def fetch_customer_assets_perf(customer_id: str) -> list[dict]:
