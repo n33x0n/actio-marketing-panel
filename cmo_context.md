@@ -14,6 +14,7 @@ measurement_incident_until: 2026-06-12
 - DEMAND_GEN (SIPTRUNK + 3G): ocena i ewentualne cięcia budżetu DOPIERO po czystym oknie pomiaru (~12–14.06). Znany problem jakości placementów (dziecięce kanały gamingowe YT) – decyzja o content suitability po danych konwersji.
 
 ## Dziennik zmian na koncie (najnowsze u góry)
+- 10.06: odbudowa pomiaru POTWIERDZONA – capture-rate 5% (08.06, przed fixem) → 37% (09.06, dzień mieszany; część po fixie ~50%). Pierwsza konwersja w Ads po incydencie: BRAND `actio voip` 09.06 (import GA4→Ads działa). DG nadal 0 conv – oczekiwane (atrybucja gclid przez okno incydentu + lag importu), ocena 12–14.06 bez zmian.
 - 09.06: SMSAPI → PAUSED; 3CX stawki ad group + keywords 5→10 zł; BRAND + negatyw `agencja` [PHRASE]; tracking naprawiony ~10:20 (consent granted-default).
 - 08.06: BRAND maxCPC (TIS ceiling) 20→30 zł; IS 15%→72%.
 - 30.05: de-inflacja `generate_lead` – usunięta reguła GA4 zawyżająca ~7× (86% leadów fake: page_view /kontakt → generate_lead) + dedup tagów GTM. Realny baseline po: ~12–13 leadów/tydz (2–5/dzień). Dane sprzed 30.05 mają ZAWYŻONE conv – nie używaj ich do oceny ROAS.
