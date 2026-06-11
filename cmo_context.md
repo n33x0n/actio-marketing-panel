@@ -14,6 +14,7 @@ measurement_incident_until: 2026-06-12
 - DEMAND_GEN (SIPTRUNK + 3G): ocena i ewentualne cięcia budżetu DOPIERO po czystym oknie pomiaru (~12–14.06). Znany problem jakości placementów (dziecięce kanały gamingowe YT) – decyzja o content suitability po danych konwersji.
 
 ## Dziennik zmian na koncie (najnowsze u góry)
+- 11.06: capture-rate FINALNIE potwierdzony: 09.06=44%, 10.06=40% (pełny czysty dzień) – poziom sprzed incydentu, pomiar odbudowany. Leady 10.06: tylko 1 (źródło not set) – pierwszy realny sygnał wolumenu po naprawie; oceniać w oknie 12–14.06, nie po jednym dniu.
 - 10.06: utworzona lista Customer Match `ACTIO_CRM_KLIENCI_B2B` (userLists/9406277210, CONTACT_INFO, 540 dni) – PUSTA, czeka na eksport z CRM; uploader: customer_match_upload.py. Do niczego nie podpięta – nie raportuj jako aktywnej grupy odbiorców.
 - 10.06: odbudowa pomiaru POTWIERDZONA – capture-rate 5% (08.06, przed fixem) → 37% (09.06, dzień mieszany; część po fixie ~50%). Pierwsza konwersja w Ads po incydencie: BRAND `actio voip` 09.06 (import GA4→Ads działa). DG nadal 0 conv – oczekiwane (atrybucja gclid przez okno incydentu + lag importu), ocena 12–14.06 bez zmian.
 - 09.06: SMSAPI → PAUSED; 3CX stawki ad group + keywords 5→10 zł; BRAND + negatyw `agencja` [PHRASE]; tracking naprawiony ~10:20 (consent granted-default).
