@@ -1,4 +1,4 @@
-measurement_incident_until: 2026-06-12
+measurement_incident_until: 2026-06-16
 
 ## Aktywne incydenty pomiaru
 - 03.06–09.06 ~10:20: po migracji multilang consent default=denied → GA4/Ads liczyły ~13% ruchu (kliki Ads były normalne ~2400/d). Sesje/konwersje z tych dat są NIEDOSZACOWANE ~5×. NIE oceniaj kampanii po conv z tego okna i NIE pisz „kampania nie konwertuje" na bazie tych dat. Naprawione 09.06 ~10:20 (granted-default, mu-plugin actio-consent-grant.php).
@@ -14,6 +14,9 @@ measurement_incident_until: 2026-06-12
 - DEMAND_GEN (SIPTRUNK + 3G): ocena i ewentualne cięcia budżetu DOPIERO po czystym oknie pomiaru (~12–14.06). Znany problem jakości placementów (dziecięce kanały gamingowe YT) – decyzja o content suitability po danych konwersji.
 
 ## Fakty zweryfikowane (nie flaguj ponownie)
+- 3CX negatywy EN/DIY dodane 12.06 (pricing/price/cost/for windows/for small business/pickup call/3cxphone/asterisk/dialer/login/setup/application/pro 8 sc + jcb/koparka/koparki – JCB 3CX to model KOPARKI). NIE proponuj blokowania: `phone system` (nazwa naszego produktu/landinga), `cloud` (hostowane 3CX = nasza oferta), `3cx web` (konwertuje), `communications system`.
+- Search term `actio firma` w BRAND: avg_qs=0 to artefakt joinu raportowego (term złapany przez `actio`[P], nie ma własnego keyworda). Intencja BRANDOWA – NIE dodawać jako negatyw; osobny keyword zbędny.
+- Okna 7d zawierają dni z zepsutym pomiarem (03–09.06) aż do raportu z 16.06 włącznie – stąd incident gate przedłużony do 2026-06-16. Pierwszy w pełni czysty raport 7d: 17.06.
 - Negatyw `agencja` [P] w BRAND DZIAŁA: zero wystąpień search termów z „agencja" po 09.06 (data dodania). Term `actio agencja pracy` widoczny w oknie 7d pochodzi z 03/07.06 – sprzed negatywu. NIE rekomenduj `agencja pracy` ani weryfikacji.
 - Norma capture-rate (sesje GA4 ÷ kliki Ads) = **40–47%**, NIE 90% – część klików naturalnie nie kończy się sesją (bounce przed JS, prefetch). Osiągnięte: 09.06=44%, 10.06=40% – pomiar odbudowany, temat zamknięty.
 - Brief LP-speed WYSŁANY do developera 10.06 (page cache/CF APO + reCAPTCHA poza formularzami + jQuery defer + konsolidacja tagów). Status: czekamy na wdrożenie – NIE rekomenduj ponownej eskalacji, monitoruj TTFB/QS.
