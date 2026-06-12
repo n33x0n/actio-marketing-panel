@@ -26,6 +26,7 @@ measurement_incident_until: 2026-06-12
 4. BRAND IS: czy 74→90%+; jeśli nie i lostRank wysoki → maxCPC 40 zł.
 
 ## Dziennik zmian na koncie (najnowsze u góry)
+- 12.06: monitor BRAND wykonany – IS 84%→40% (11.06): ceiling 30 zł wybidował avgCPC do 25-26 zł, lostRank spadł do 11%, ale wąskim gardłem został BUDŻET (lostBudget 49%, częściowo pacing po przepale 174 zł 09.06). maxCPC 40 NIE zastosowany (pogorszyłby IS). Decyzja: bez zmian do 15.06 – wtedy ocena conv brandu na czystych danych + decyzja budżet vs czekanie na QS po LP-fix vs złagodzenie celu TIS (ABS_TOP→TOP_OF_PAGE). NIE rekomenduj zmian na BRAND przed 15.06.
 - 11.06: capture-rate FINALNIE potwierdzony: 09.06=44%, 10.06=40% (pełny czysty dzień) – poziom sprzed incydentu, pomiar odbudowany. Leady 10.06: tylko 1 (źródło not set) – pierwszy realny sygnał wolumenu po naprawie; oceniać w oknie 12–14.06, nie po jednym dniu.
 - 10.06: utworzona lista Customer Match `ACTIO_CRM_KLIENCI_B2B` (userLists/9406277210, CONTACT_INFO, 540 dni) – PUSTA, czeka na eksport z CRM; uploader: customer_match_upload.py. Do niczego nie podpięta – nie raportuj jako aktywnej grupy odbiorców.
 - 10.06: odbudowa pomiaru POTWIERDZONA – capture-rate 5% (08.06, przed fixem) → 37% (09.06, dzień mieszany; część po fixie ~50%). Pierwsza konwersja w Ads po incydencie: BRAND `actio voip` 09.06 (import GA4→Ads działa). DG nadal 0 conv – oczekiwane (atrybucja gclid przez okno incydentu + lag importu), ocena 12–14.06 bez zmian.
