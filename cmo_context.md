@@ -14,6 +14,8 @@ measurement_incident_until: 2026-06-16
 - DEMAND_GEN (SIPTRUNK + 3G): ocena i ewentualne cięcia budżetu DOPIERO po czystym oknie pomiaru (~12–14.06). Znany problem jakości placementów (dziecięce kanały gamingowe YT) – decyzja o content suitability po danych konwersji.
 
 ## Fakty zweryfikowane (nie flaguj ponownie)
+- `licencja` / `3cx licencja` w 3CX: NIE blokować – „3cx licencja" to NASZ aktywny keyword + mamy nagłówek RSA „3CX licencja od Actio" (jesteśmy partnerem 3CX, sprzedajemy licencje). QS=0 = niski wolumen, nie zła intencja. (Raport 13.06 błędnie rekomendował negatyw.)
+- BRAND: dodany negatyw `nieruchomości` [PHRASE] 13.06 (term „actio nieruchomości grażyna konarkowska" 87 zł – obca firma nieruchomości; wzorzec jak actio kancelaria/locatio). Wysoki koszt 3 klików = artefakt CPC ~25 zł z okresu ABS_TOP (już zmienione na TOP_OF_PAGE).
 - 3CX negatywy EN/DIY dodane 12.06 (pricing/price/cost/for windows/for small business/pickup call/3cxphone/asterisk/dialer/login/setup/application/pro 8 sc + jcb/koparka/koparki – JCB 3CX to model KOPARKI). NIE proponuj blokowania: `phone system` (nazwa naszego produktu/landinga), `cloud` (hostowane 3CX = nasza oferta), `3cx web` (konwertuje), `communications system`.
 - Search term `actio firma` w BRAND: avg_qs=0 to artefakt joinu raportowego (term złapany przez `actio`[P], nie ma własnego keyworda). Intencja BRANDOWA – NIE dodawać jako negatyw; osobny keyword zbędny.
 - Okna 7d zawierają dni z zepsutym pomiarem (03–09.06) aż do raportu z 16.06 włącznie – stąd incident gate przedłużony do 2026-06-16. Pierwszy w pełni czysty raport 7d: 17.06.
