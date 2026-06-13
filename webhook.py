@@ -8,6 +8,7 @@ import datetime
 import json
 import os
 import pathlib
+import re
 import secrets
 
 _mcp = pathlib.Path(__file__).parent / ".mcp.json"
@@ -42,6 +43,36 @@ if _panel_dir.exists():
 _social_img_dir = pathlib.Path(__file__).parent / "autopost_images" / "social"
 _social_img_dir.mkdir(parents=True, exist_ok=True)
 app.mount("/autopost/img", StaticFiles(directory=str(_social_img_dir)), name="social_img")
+
+# Podgląd mailingów – wyrenderowane szablony email-*.html z handoff/ (za CF Access).
+# Whitelist po nazwie: serwujemy WYŁĄCZNIE email-*.html, żeby nie wystawić źródeł
+# mu-pluginów PHP leżących w tym samym katalogu.
+_handoff_dir = pathlib.Path(__file__).parent / "handoff"
+
+
+@app.get("/mailing", response_class=HTMLResponse)
+def mailing_index() -> str:
+    items = sorted(p.name for p in _handoff_dir.glob("email-*.html"))
+    links = "".join(
+        f'<li style="margin:6px 0"><a href="/mailing/{n}">{n}</a></li>' for n in items
+    ) or "<li>(brak szablonów)</li>"
+    return (
+        "<!doctype html><html lang='pl'><head><meta charset='utf-8'>"
+        "<title>Mailingi Actio</title></head>"
+        "<body style='font-family:Arial,sans-serif;padding:32px;color:#1d2233'>"
+        "<h1 style='font-size:20px'>Mailingi Actio</h1>"
+        f"<ul style='font-size:15px;line-height:1.6'>{links}</ul></body></html>"
+    )
+
+
+@app.get("/mailing/{name}", response_class=HTMLResponse)
+def mailing_view(name: str) -> str:
+    if not re.fullmatch(r"email-[a-z0-9-]+\.html", name):
+        raise HTTPException(status_code=404)
+    path = _handoff_dir / name
+    if not path.is_file():
+        raise HTTPException(status_code=404)
+    return path.read_text(encoding="utf-8")
 
 
 def _db_path() -> str:
