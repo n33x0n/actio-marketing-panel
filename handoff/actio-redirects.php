@@ -27,6 +27,7 @@ add_action( 'init', function () {
 	// Dopasowania dokładne (klucz bez trailing slash).
 	$exact = array(
 		'/uslugi/3px-phone-system'                                         => '/uslugi/3cx-phone-system/',
+		'/blog'                                                            => '/artykuly/',
 		'/rejestracja/rejestracja-konta-actio-free'                        => '/rejestracja/',
 		'/numery-voip-pelny-przewodnik-jak-dzialaja-jak-wybrac-i-dla-kogo' => '/blog/2025/12/15/numery-voip-pelny-przewodnik-jak-dzialaja-jak-wybrac-i-ile-kosztuja/',
 		'/uslugi/sms-przez-voip-2'                                         => '/uslugi/sms-przez-voip/',
