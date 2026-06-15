@@ -407,7 +407,14 @@ add_action( 'wp_footer', function() {
         var phoneInput = form.querySelector('input[name*="tel"], input[name*="phone"], input[name*="telefon"]');
         fireLead({
             lead_type: 'form',
-            form_id: String((e.detail && e.detail.contactFormId) || ''),
+            form_id: (function () {
+                var d = e.detail || {};
+                if (d.contactFormId) return String(d.contactFormId);          // 1. standard CF7
+                try { var h = form.querySelector('input[name="_wpcf7"]');      // 2. ukryty input (zawsze w CF7)
+                      if (h && h.value) return String(h.value); } catch (x) {}
+                var m = String((form && form.id) || d.unitTag || '').match(/f(\d+)/); // 3. id wrappera wpcf7-f<ID>-oN
+                return m ? m[1] : '';
+            })(),
             form_location: window.location.pathname,
             email: emailInput ? (emailInput.value || '') : '',
             phone_number: phoneInput ? actioNormalizePhone(phoneInput.value || '') : '',
