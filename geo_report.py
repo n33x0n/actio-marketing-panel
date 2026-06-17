@@ -118,6 +118,9 @@ def gsc_brand() -> list[str]:
 
 def ga4_ai_referrers() -> list[str]:
     try:
+        gac = _env("GOOGLE_APPLICATION_CREDENTIALS")
+        if gac:
+            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = gac
         from google.analytics.data_v1beta import BetaAnalyticsDataClient
         from google.analytics.data_v1beta.types import RunReportRequest, Dimension, Metric, DateRange
         prop = _env("GA4_PROPERTY_ID", "366851699")
