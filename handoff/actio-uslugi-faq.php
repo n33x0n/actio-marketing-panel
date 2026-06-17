@@ -99,11 +99,21 @@ add_action( 'template_redirect', function () {
 
 		$block = "\n" . $section . "\n" . $jsonld . "\n";
 
-		// wstaw przed stopką (naturalne miejsce); fallback przed </body>
-		if ( preg_match( '/<footer[\s>]/i', $html, $m, PREG_OFFSET_CAPTURE ) ) {
-			$pos = $m[0][1];
-			return substr( $html, 0, $pos ) . $block . substr( $html, $pos );
+		// Wstaw NAD globalnym blokiem CTA "Rozwijasz komunikację w firmie?".
+		// Kotwica: ostatni kontener Elementora e-parent (sekcja top-level) przed tekstem CTA.
+		$insert_at = false;
+		$cta = stripos( $html, 'Rozwijasz komunikac' ); // ASCII fragment (bez diakrytyki) = offset bajtowy
+		if ( $cta !== false
+			&& preg_match_all( '/<div\s+class="[^"]*\be-parent\b[^"]*"[^>]*>/i', substr( $html, 0, $cta ), $mm, PREG_OFFSET_CAPTURE ) ) {
+			$insert_at = $mm[0][ count( $mm[0] ) - 1 ][1];
 		}
-		return str_ireplace( '</body>', $block . '</body>', $html );
+		// Fallback: przed stopką, ostatecznie przed </body>.
+		if ( $insert_at === false && preg_match( '/<footer[\s>]/i', $html, $m, PREG_OFFSET_CAPTURE ) ) {
+			$insert_at = $m[0][1];
+		}
+		if ( $insert_at === false ) {
+			return str_ireplace( '</body>', $block . '</body>', $html );
+		}
+		return substr( $html, 0, $insert_at ) . $block . substr( $html, $insert_at );
 	} );
 }, 1 );
