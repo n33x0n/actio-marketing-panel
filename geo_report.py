@@ -149,10 +149,13 @@ def ga4_ai_referrers() -> list[str]:
         return [f"GA4 AI-referrers: blad ({type(e).__name__}: {e})"]
 
 
-def build_report() -> str:
+def build_report(as_section: bool = False) -> str:
+    """as_section=True -> naglowek H2 do wklejenia w wiekszy raport (mail CMO);
+    False -> samodzielny raport z H1 (uruchomienie z CLI)."""
     db_path = _env("DB_PATH") or str(BASE_DIR / "marketing_data.db")
     conn = sqlite3.connect(db_path)
-    parts = [f"# Raport GEO / AI Share of Voice – {date.today().isoformat()}", ""]
+    header = "## GEO / AI Share of Voice" if as_section else f"# Raport GEO / AI Share of Voice – {date.today().isoformat()}"
+    parts = [header, ""]
     parts += geo_section(conn)
     conn.close()
     parts += [""] + gsc_brand()

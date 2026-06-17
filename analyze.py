@@ -322,6 +322,8 @@ def panel_view(report_md: str) -> str:
     Panel view trafia do MD_REPORTS_DIR i jest wyświetlany w Chainlit.
     """
     md = re.sub(r"\n+##\s*Rekomendacje.*", "", report_md, flags=re.DOTALL).rstrip() + "\n"
+    # GEO / AI Share of Voice — sekcja tylko dla CMO; usun z wersji panel (Hubert).
+    md = re.sub(r"\n+##\s*GEO.*", "", md, flags=re.DOTALL).rstrip() + "\n"
 
     lines = md.splitlines()
     out: list[str] = []
@@ -466,6 +468,12 @@ def generate_report() -> dict:
     data = collect_data_summary()
     prompt = REPORT_PROMPT.format(**data)
     report_md = call_openrouter(prompt)
+    # Sekcja GEO / AI Share of Voice — tylko raport CMO (panel_view ja usuwa -> Hubert nie dostaje).
+    try:
+        import geo_report
+        report_md = report_md.rstrip() + "\n\n" + geo_report.build_report(as_section=True)
+    except Exception as e:
+        print(f"geo_report append error: {type(e).__name__}: {e}")
     vault_path = save_report(data["date"], report_md, sync_status)
     if os.environ.get("MD_REPORTS_DIR"):
         base = os.environ.get("CHAINLIT_BASE_URL", "").rstrip("/")
