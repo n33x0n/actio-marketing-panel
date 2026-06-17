@@ -18,7 +18,7 @@ import sqlite3
 from datetime import date, timedelta
 
 BASE_DIR = pathlib.Path(__file__).resolve().parent
-AI_REFERRERS = ("chatgpt", "openai", "perplexity", "gemini", "copilot", "claude", "bing")
+AI_REFERRERS = ("chatgpt", "openai", "perplexity", "gemini", "copilot", "claude")
 
 
 def _env(key: str, default: str | None = None) -> str | None:
