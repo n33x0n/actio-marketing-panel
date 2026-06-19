@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name: Actio – FAQ + FAQPage na stronach usług (GEO/AI-SEO, task A2)
- * Description: Dodaje widoczny blok FAQ + znacznik schema.org FAQPage (JSON-LD) na money-stronach usług, które go nie mają: /uslugi/sip-trunk, /uslugi/3cx-phone-system, /uslugi/wirtualna-centrala, /uslugi/sms-api. Cel: dać AI (ChatGPT/Perplexity/Google AI) i wyszukiwarkom gotowe, cytowalne pary pytanie-odpowiedź → podnieść AI Share of Voice. NIEZALEŻNY od actio-schema-mu-plugin.php (ten obsługuje wirtualny-numer + blog) – zero kolizji i zero ryzyka nadpisania przez autopublisher. Output-buffer (template_redirect), scoped do 4 slugów, idempotentny, odwracalny (usunięcie pliku = stan sprzed). Treść FAQ oparta na realnej ofercie Actio.
- * Version: 1.0.0
+ * Plugin Name: Actio – FAQ + tabele porównawcze na stronach usług (GEO/AI-SEO, taski A2 + A6)
+ * Description: Dodaje na money-stronach usług (a) widoczny blok FAQ + schema.org FAQPage oraz (b) tabele porównawcze (format preferowany przez LLM do cytowania). FAQ na: /uslugi/sip-trunk, /uslugi/3cx-phone-system, /uslugi/wirtualna-centrala, /uslugi/sms-api. Tabele na: /uslugi/sip-trunk (SIP Trunk vs ISDN/PSTN), /uslugi/3cx-phone-system (3CX vs model per-user), /uslugi/wirtualny-numer-komorkowy-voip (numer VoIP vs karta SIM/GSM). Cel: dać AI (ChatGPT/Perplexity/Google AI) i wyszukiwarkom gotowe, cytowalne pary Q&A i porównania → podnieść AI Share of Voice. NIEZALEŻNY od actio-schema-mu-plugin.php – zero kolizji i zero ryzyka nadpisania przez autopublisher. Output-buffer (template_redirect), scoped do slugów, idempotentny, odwracalny (usunięcie pliku = stan sprzed). Tabele = porównania kategorii (nasza technologia vs tradycyjny/typowy model), bez nazywania konkurentów.
+ * Version: 1.1.0
  * Author: Actio Marketing
  */
 
@@ -55,54 +55,134 @@ function actio_uslugi_faq_data() {
 	);
 }
 
+function actio_uslugi_tabele_data() {
+	return array(
+		'/uslugi/sip-trunk' => array(
+			'title' => 'SIP Trunk vs tradycyjne łącza ISDN / PSTN',
+			'cols'  => array( 'Cecha', 'SIP Trunk (Actio)', 'Tradycyjne ISDN / PSTN' ),
+			'rows'  => array(
+				array( 'Technologia', 'Głos przez internet (VoIP/SIP)', 'Fizyczne łącza miedziane' ),
+				array( 'Koszt połączeń i utrzymania', 'Niższy – bez dzierżawy linii', 'Wyższy – dzierżawa + wyższe stawki' ),
+				array( 'Liczba kanałów (połączeń równoległych)', 'Skalowalna w dowolnym momencie', 'Ograniczona fizycznie' ),
+				array( 'Sprzęt', 'Wystarczy centrala z obsługą SIP + internet', 'Wymaga linii i osprzętu operatora' ),
+				array( 'Zachowanie numeru (MNP)', 'Tak – operator zarejestrowany w UKE', 'Zależne od operatora' ),
+				array( 'Obsługa SMS na numerze firmowym', 'Tak', 'Zwykle brak' ),
+				array( 'Czas wdrożenia', 'Zwykle godziny', 'Dni – tygodnie' ),
+				array( 'Dostępność (SLA)', '99,9%', 'Zależne od infrastruktury' ),
+			),
+		),
+		'/uslugi/3cx-phone-system' => array(
+			'title' => '3CX z Actio vs klasyczny model licencyjny „per-user”',
+			'cols'  => array( 'Cecha', '3CX z Actio', 'Klasyczny model per-user' ),
+			'rows'  => array(
+				array( 'Model licencji', 'Wg liczby jednoczesnych połączeń', 'Opłata za każdego użytkownika' ),
+				array( 'Koszt przy rosnącym zespole', 'Stały – nie rośnie z liczbą pracowników', 'Rośnie z każdym kolejnym użytkownikiem' ),
+				array( 'Praca zdalna i mobilna', 'Aplikacja na telefon i komputer w cenie', 'Często wymaga dodatkowego sprzętu' ),
+				array( 'Wideokonferencje i czat', 'Wbudowane', 'Zwykle dopłata lub brak' ),
+				array( 'Integracje z CRM', 'M365, Salesforce, HubSpot, Zendesk i inne', 'Ograniczone' ),
+				array( 'Numery i SIP Trunk', 'Polskie numery +48 przez Actio (z MNP)', 'Zależne od operatora' ),
+				array( 'Wsparcie', 'Polski zespół, partner 3CX od 2009 r.', 'Zależne od dostawcy' ),
+			),
+		),
+		'/uslugi/wirtualny-numer-komorkowy-voip' => array(
+			'title' => 'Wirtualny numer komórkowy VoIP vs zwykła karta SIM / GSM',
+			'cols'  => array( 'Cecha', 'Wirtualny numer komórkowy (Actio)', 'Zwykła karta SIM / GSM' ),
+			'rows'  => array(
+				array( 'Karta SIM w telefonie', 'Niepotrzebna – numer działa przez internet (SIP/VoIP)', 'Wymagana fizyczna karta SIM' ),
+				array( 'Liczba urządzeń na jednym numerze', 'Wiele (telefon, komputer, aplikacja)', 'Jedno urządzenie z kartą' ),
+				array( 'Praca zdalna / wiele lokalizacji', 'Tak – z dowolnego miejsca z internetem', 'Ograniczona zasięgiem sieci GSM' ),
+				array( 'Koszt', 'Do 40% taniej', 'Standardowe stawki komórkowe' ),
+				array( 'Integracja z centralą / CRM', 'Tak (SIP, 3CX, API)', 'Brak' ),
+				array( 'Zachowanie numeru (MNP)', 'Tak – operator zarejestrowany w UKE', 'Tak, zależnie od operatora' ),
+				array( 'Numer komórkowy bez umowy GSM', 'Tak', 'Nie' ),
+			),
+		),
+	);
+}
+
 add_action( 'template_redirect', function () {
-	$path = rtrim( strtok( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '', '?' ), '/' );
-	$data = actio_uslugi_faq_data();
-	if ( ! isset( $data[ $path ] ) ) {
+	$path  = rtrim( strtok( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '', '?' ), '/' );
+	$faqs  = actio_uslugi_faq_data();
+	$tabs  = actio_uslugi_tabele_data();
+	$faq   = isset( $faqs[ $path ] ) ? $faqs[ $path ] : null;
+	$table = isset( $tabs[ $path ] ) ? $tabs[ $path ] : null;
+	if ( $faq === null && $table === null ) {
 		return;
 	}
-	$faq = $data[ $path ];
 
-	ob_start( function ( $html ) use ( $faq ) {
+	ob_start( function ( $html ) use ( $faq, $table ) {
 		if ( ! is_string( $html ) || stripos( $html, '</body>' ) === false ) {
 			return $html;
 		}
-		if ( strpos( $html, 'actio-faq-section' ) !== false ) {
+		if ( strpos( $html, 'actio-faq-section' ) !== false || strpos( $html, 'actio-tabela-section' ) !== false ) {
 			return $html; // idempotentny
 		}
 
-		// 1. widoczny blok FAQ (accordion)
-		$items = '';
-		$entities = array();
-		foreach ( $faq as $q => $a ) {
-			$items .= '<details class="actio-faq-item" style="border-bottom:1px solid #e5e7eb;padding:16px 0;">'
-				. '<summary style="cursor:pointer;font-weight:600;font-size:1.05rem;list-style:none;">' . esc_html( $q ) . '</summary>'
-				. '<div style="margin-top:10px;color:#444;line-height:1.65;">' . esc_html( $a ) . '</div></details>';
-			$entities[] = array(
-				'@type'          => 'Question',
-				'name'           => $q,
-				'acceptedAnswer' => array( '@type' => 'Answer', 'text' => $a ),
-			);
+		// 1. tabela porównawcza (jeśli zdefiniowana dla slugu) – nad FAQ
+		$tableblock = '';
+		if ( $table ) {
+			$thead = '<tr>';
+			foreach ( $table['cols'] as $i => $c ) {
+				$bg = ( $i === 1 ) ? 'background:#ee7f17;color:#ffffff;' : 'background:#f3f4f6;color:#1d2233;';
+				$thead .= '<th style="text-align:left;padding:12px 14px;font-size:0.98rem;border:1px solid #e5e7eb;' . $bg . '">' . esc_html( $c ) . '</th>';
+			}
+			$thead .= '</tr>';
+			$tbody = '';
+			foreach ( $table['rows'] as $r ) {
+				$tbody .= '<tr>';
+				foreach ( $r as $i => $cell ) {
+					$style = 'padding:11px 14px;border:1px solid #e5e7eb;line-height:1.5;font-size:0.95rem;vertical-align:top;';
+					if ( $i === 0 ) {
+						$style .= 'font-weight:600;color:#1d2233;background:#fafbfc;';
+					} elseif ( $i === 1 ) {
+						$style .= 'background:#fff8ee;color:#1d2233;';
+					} else {
+						$style .= 'color:#555555;';
+					}
+					$tbody .= '<td style="' . $style . '">' . esc_html( $cell ) . '</td>';
+				}
+				$tbody .= '</tr>';
+			}
+			$tableblock = '<section class="actio-tabela-section" style="max-width:880px;margin:48px auto 0;padding:0 20px;">'
+				. '<h2 style="font-size:1.6rem;margin-bottom:16px;">' . esc_html( $table['title'] ) . '</h2>'
+				. '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;">'
+				. '<thead>' . $thead . '</thead><tbody>' . $tbody . '</tbody></table></div></section>';
 		}
-		$section = '<section class="actio-faq-section" style="max-width:880px;margin:48px auto;padding:0 20px;">'
-			. '<h2 style="font-size:1.6rem;margin-bottom:8px;">Najczęstsze pytania (FAQ)</h2>' . $items . '</section>';
 
-		// 2. znacznik FAQPage (JSON-LD)
-		$ld = array(
-			'@context'   => 'https://schema.org',
-			'@type'      => 'FAQPage',
-			'mainEntity' => $entities,
-		);
-		$jsonld = '<script type="application/ld+json">'
-			. wp_json_encode( $ld, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE )
-			. '</script>';
+		// 2. widoczny blok FAQ (accordion) + znacznik FAQPage (JSON-LD)
+		$faqblock = '';
+		if ( $faq ) {
+			$items    = '';
+			$entities = array();
+			foreach ( $faq as $q => $a ) {
+				$items .= '<details class="actio-faq-item" style="border-bottom:1px solid #e5e7eb;padding:16px 0;">'
+					. '<summary style="cursor:pointer;font-weight:600;font-size:1.05rem;list-style:none;">' . esc_html( $q ) . '</summary>'
+					. '<div style="margin-top:10px;color:#444;line-height:1.65;">' . esc_html( $a ) . '</div></details>';
+				$entities[] = array(
+					'@type'          => 'Question',
+					'name'           => $q,
+					'acceptedAnswer' => array( '@type' => 'Answer', 'text' => $a ),
+				);
+			}
+			$section = '<section class="actio-faq-section" style="max-width:880px;margin:48px auto;padding:0 20px;">'
+				. '<h2 style="font-size:1.6rem;margin-bottom:8px;">Najczęstsze pytania (FAQ)</h2>' . $items . '</section>';
+			$ld     = array(
+				'@context'   => 'https://schema.org',
+				'@type'      => 'FAQPage',
+				'mainEntity' => $entities,
+			);
+			$jsonld = '<script type="application/ld+json">'
+				. wp_json_encode( $ld, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE )
+				. '</script>';
+			$faqblock = $section . "\n" . $jsonld;
+		}
 
-		$block = "\n" . $section . "\n" . $jsonld . "\n";
+		$block = "\n" . $tableblock . "\n" . $faqblock . "\n";
 
 		// Wstaw NAD globalnym blokiem CTA "Rozwijasz komunikację w firmie?".
 		// Kotwica: ostatni kontener Elementora e-parent (sekcja top-level) przed tekstem CTA.
 		$insert_at = false;
-		$cta = stripos( $html, 'Rozwijasz komunikac' ); // ASCII fragment (bez diakrytyki) = offset bajtowy
+		$cta       = stripos( $html, 'Rozwijasz komunikac' ); // ASCII fragment (bez diakrytyki) = offset bajtowy
 		if ( $cta !== false
 			&& preg_match_all( '/<div\s+class="[^"]*\be-parent\b[^"]*"[^>]*>/i', substr( $html, 0, $cta ), $mm, PREG_OFFSET_CAPTURE ) ) {
 			$insert_at = $mm[0][ count( $mm[0] ) - 1 ][1];
