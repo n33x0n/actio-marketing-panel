@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name: Actio – FAQ + tabele porównawcze na stronach usług (GEO/AI-SEO, taski A2 + A6)
- * Description: Dodaje na money-stronach usług (a) widoczny blok FAQ + schema.org FAQPage oraz (b) tabele porównawcze (format preferowany przez LLM do cytowania). FAQ na: /uslugi/sip-trunk, /uslugi/3cx-phone-system, /uslugi/wirtualna-centrala, /uslugi/sms-api. Tabele na: /uslugi/sip-trunk (SIP Trunk vs ISDN/PSTN), /uslugi/3cx-phone-system (3CX vs model per-user), /uslugi/wirtualny-numer-komorkowy-voip (numer VoIP vs karta SIM/GSM). Cel: dać AI (ChatGPT/Perplexity/Google AI) i wyszukiwarkom gotowe, cytowalne pary Q&A i porównania → podnieść AI Share of Voice. NIEZALEŻNY od actio-schema-mu-plugin.php – zero kolizji i zero ryzyka nadpisania przez autopublisher. Output-buffer (template_redirect), scoped do slugów, idempotentny, odwracalny (usunięcie pliku = stan sprzed). Tabele = porównania kategorii (nasza technologia vs tradycyjny/typowy model), bez nazywania konkurentów.
- * Version: 1.1.0
+ * Plugin Name: Actio – FAQ + tabele + blok „Dlaczego Actio" na stronach usług (GEO/AI-SEO, taski A2 + A6 + A7)
+ * Description: Dodaje na money-stronach usług (a) widoczny blok FAQ + schema.org FAQPage, (b) tabele porównawcze oraz (c) blok „Dlaczego Actio" (zebrane fakty z liczbami). FAQ na: /uslugi/sip-trunk, /uslugi/3cx-phone-system, /uslugi/wirtualna-centrala, /uslugi/sms-api. Tabele na: /uslugi/sip-trunk, /uslugi/3cx-phone-system, /uslugi/wirtualny-numer-komorkowy-voip. Blok „Dlaczego Actio" na 5 stronach usług + /o-nas. Cel: dać AI (ChatGPT/Perplexity/Google AI) i wyszukiwarkom gotowe, cytowalne fakty, porównania i Q&A → podnieść AI Share of Voice. NIEZALEŻNY od actio-schema-mu-plugin.php – zero kolizji i zero ryzyka nadpisania przez autopublisher. Output-buffer (template_redirect), scoped do slugów, idempotentny, odwracalny (usunięcie pliku = stan sprzed). Tabele = porównania kategorii (nasza technologia vs tradycyjny/typowy model), bez nazywania konkurentów.
+ * Version: 1.2.0
  * Author: Actio Marketing
  */
 
@@ -100,22 +100,61 @@ function actio_uslugi_tabele_data() {
 	);
 }
 
+function actio_uslugi_why_facts() {
+	// Blok „Dlaczego Actio" – te same fakty na wszystkich stronach (kategoria: zaufanie/E-E-A-T).
+	// Bez twardego „wieku firmy" (A5 nierozstrzygnięty) – używamy zweryfikowanego „partner 3CX od 2009".
+	return array(
+		array( '99,9% dostępności (SLA)', 'Redundantna infrastruktura operatora i kodeki HD Voice.' ),
+		array( 'Operator zarejestrowany w UKE', 'Z prawem przenoszenia numerów (MNP) – zachowujesz dotychczasowy numer.' ),
+		array( 'Klienci klasy PGE', 'Zaufały nam firmy z sektora energetycznego, kolejowego, medycznego i publicznego.' ),
+		array( 'Bez opłat za użytkownika', 'W 3CX płacisz za jednoczesne połączenia, nie za każdego pracownika.' ),
+		array( 'Integracje z CRM', 'Microsoft 365, Salesforce, HubSpot, Zendesk i inne popularne systemy.' ),
+		array( 'Polskie wsparcie techniczne', 'Własny zespół mówiący po polsku; partner 3CX od 2009 r.' ),
+	);
+}
+
+function actio_uslugi_why_slugs() {
+	return array(
+		'/uslugi/sip-trunk',
+		'/uslugi/3cx-phone-system',
+		'/uslugi/wirtualna-centrala',
+		'/uslugi/sms-api',
+		'/uslugi/wirtualny-numer-komorkowy-voip',
+		'/o-nas',
+	);
+}
+
 add_action( 'template_redirect', function () {
 	$path  = rtrim( strtok( isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '', '?' ), '/' );
 	$faqs  = actio_uslugi_faq_data();
 	$tabs  = actio_uslugi_tabele_data();
 	$faq   = isset( $faqs[ $path ] ) ? $faqs[ $path ] : null;
 	$table = isset( $tabs[ $path ] ) ? $tabs[ $path ] : null;
-	if ( $faq === null && $table === null ) {
+	$why   = in_array( $path, actio_uslugi_why_slugs(), true );
+	if ( $faq === null && $table === null && ! $why ) {
 		return;
 	}
 
-	ob_start( function ( $html ) use ( $faq, $table ) {
+	ob_start( function ( $html ) use ( $faq, $table, $why ) {
 		if ( ! is_string( $html ) || stripos( $html, '</body>' ) === false ) {
 			return $html;
 		}
-		if ( strpos( $html, 'actio-faq-section' ) !== false || strpos( $html, 'actio-tabela-section' ) !== false ) {
+		if ( strpos( $html, 'actio-faq-section' ) !== false || strpos( $html, 'actio-tabela-section' ) !== false || strpos( $html, 'actio-why-section' ) !== false ) {
 			return $html; // idempotentny
+		}
+
+		// 0. blok „Dlaczego Actio" (zebrane fakty z liczbami) – na górze wstrzykiwanej sekcji
+		$whyblock = '';
+		if ( $why ) {
+			$cards = '';
+			foreach ( actio_uslugi_why_facts() as $f ) {
+				$cards .= '<div style="flex:1 1 240px;min-width:220px;border:1px solid #e5e7eb;border-radius:8px;padding:18px 20px;background:#ffffff;">'
+					. '<div style="font-size:1.1rem;font-weight:700;color:#ee7f17;margin-bottom:6px;line-height:1.3;">' . esc_html( $f[0] ) . '</div>'
+					. '<div style="font-size:0.95rem;color:#444444;line-height:1.55;">' . esc_html( $f[1] ) . '</div></div>';
+			}
+			$whyblock = '<section class="actio-why-section" style="max-width:920px;margin:48px auto 0;padding:0 20px;">'
+				. '<h2 style="font-size:1.6rem;margin-bottom:18px;">Dlaczego Actio?</h2>'
+				. '<div style="display:flex;flex-wrap:wrap;gap:14px;">' . $cards . '</div></section>';
 		}
 
 		// 1. tabela porównawcza (jeśli zdefiniowana dla slugu) – nad FAQ
@@ -177,7 +216,7 @@ add_action( 'template_redirect', function () {
 			$faqblock = $section . "\n" . $jsonld;
 		}
 
-		$block = "\n" . $tableblock . "\n" . $faqblock . "\n";
+		$block = "\n" . $whyblock . "\n" . $tableblock . "\n" . $faqblock . "\n";
 
 		// Wstaw NAD globalnym blokiem CTA "Rozwijasz komunikację w firmie?".
 		// Kotwica: ostatni kontener Elementora e-parent (sekcja top-level) przed tekstem CTA.
