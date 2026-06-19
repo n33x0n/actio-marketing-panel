@@ -220,8 +220,17 @@ add_action( 'template_redirect', function () {
 
 		// Wstaw NAD globalnym blokiem CTA "Rozwijasz komunikację w firmie?".
 		// Kotwica: ostatni kontener Elementora e-parent (sekcja top-level) przed tekstem CTA.
+		// Globalny blok CTA występuje w 2 wariantach tekstu zależnie od strony:
+		// "Rozwijasz komunikację w firmie?" (strony usług) i "Czy poprawiacie komunikację…" (/o-nas itp.).
+		// Bierzemy najwcześniejsze wystąpienie któregokolwiek (ASCII bez diakrytyki = offset bajtowy).
 		$insert_at = false;
-		$cta       = stripos( $html, 'Rozwijasz komunikac' ); // ASCII fragment (bez diakrytyki) = offset bajtowy
+		$cta       = false;
+		foreach ( array( 'Rozwijasz komunikac', 'poprawiacie komunikac' ) as $needle ) {
+			$p = stripos( $html, $needle );
+			if ( $p !== false && ( $cta === false || $p < $cta ) ) {
+				$cta = $p;
+			}
+		}
 		if ( $cta !== false
 			&& preg_match_all( '/<div\s+class="[^"]*\be-parent\b[^"]*"[^>]*>/i', substr( $html, 0, $cta ), $mm, PREG_OFFSET_CAPTURE ) ) {
 			$insert_at = $mm[0][ count( $mm[0] ) - 1 ][1];
