@@ -40,6 +40,22 @@ Wysyłasz jednym requestem (autoryzacja Bearer), odbierasz statusy dostarczenia 
 Na start dostajesz **100 SMS-ów gratis, bez podawania karty** – akurat tyle, żeby wpiąć to we własny kod i sprawdzić, czy robi robotę:
 **https://sendly.link**
 
+### Box sponsorski – wariant z curl (dla devów)
+
+Sponsorem tego wydania newslettera jest **Sendly** – nowy, polski operator SMS API (marka ACTIO, operatora zarejestrowanego w UKE).
+
+Wysłanie SMS-a z własnej aplikacji – kodu 2FA, alertu, powiadomienia – wygląda u nas tak:
+
+    curl -X POST https://msg-api.actio.pl/api/sms \
+      -H "Authorization: Bearer $TOKEN" \
+      -H "Content-Type: application/json" \
+      -d '{"from":"TwojaMarka","to":"48732129000","body":"Twój kod: 482910"}'
+
+Jeden endpoint, autoryzacja Bearer, czysty JSON – bez SDK. Bez abonamentu i bez minimów wysyłki: płacisz tylko za faktycznie wysłane wiadomości, od 0,075 zł/SMS. Statusy dostarczenia odbierasz webhookiem (DLR), ustawiasz własny sender ID, a infrastruktura stoi w Polsce (SLA 99,9%).
+
+Na start **100 SMS-ów gratis, bez podawania karty** – akurat tyle, żeby przetestować na produkcji własnego kodu:
+**https://sendly.link**
+
 ### Wpis #7 [sponsorowane]
 
 **Sendly – polski SMS API bez abonamentu, 100 SMS gratis na test [sponsorowane]**
@@ -65,4 +81,4 @@ Konkrety: dostępność 99,9% (SLA), a przy przeniesieniu numeru pierwsze 3 mies
 
 **ACTIO – SIP Trunk i 3CX dla firm od polskiego operatora [sponsorowane]**
 https://actio.pl/uslugi/sip-trunk/
-INFO: Telefonia firmowa na VoIP bez starych łączy ISDN. SIP Trunk podłączysz do dowolnej centrali (3CX, Asterisk/FreePBX, Yeastar, Teams Direct Routing), z polskimi numerami +48 i przenoszeniem (MNP). 3CX licencjonowany od jednoczesnych połączeń, nie od liczby userów – koszt nie rośnie z zespołem. Operator zarejestrowany w UKE, SLA 99,9%, partner 3CX od 2009.
+INFO: Telefonia dla firmy przez internet, bez przestarzałych łączy ISDN. Łącze SIP Trunk podłączysz do dowolnej centrali (3CX, Asterisk, Yeastar, a także Microsoft Teams), na polskich numerach +48 i z możliwością przeniesienia dotychczasowego numeru. W 3CX płacisz za liczbę jednoczesnych rozmów, a nie za każdego pracownika – koszt nie rośnie razem z zespołem. Polski operator zarejestrowany w UKE, dostępność 99,9%, partner 3CX od 2009 roku.
