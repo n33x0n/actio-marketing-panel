@@ -49,9 +49,9 @@ Wysłanie SMS-a z własnej aplikacji – kodu 2FA, alertu, powiadomienia – wyg
     curl -X POST https://msg-api.actio.pl/api/sms \
       -H "Authorization: Bearer $TOKEN" \
       -H "Content-Type: application/json" \
-      -d '{"from":"TwojaMarka","to":"48732129000","body":"Twój kod: 482910"}'
+      -d '{"from":"TwojaFirma","to":"48732129000","body":"Twój kod: 482910"}'
 
-Jeden endpoint, autoryzacja Bearer, czysty JSON – bez SDK. Bez abonamentu i bez minimów wysyłki: płacisz tylko za faktycznie wysłane wiadomości, od 0,075 zł/SMS. Statusy dostarczenia odbierasz webhookiem (DLR), ustawiasz własny sender ID, a infrastruktura stoi w Polsce (SLA 99,9%).
+Jeden endpoint, autoryzacja Bearer, czysty JSON – bez SDK. To `from` z przykładu to nadpis, czyli własna nazwa nadawcy zamiast numeru – SMS dociera do klienta podpisany Twoją firmą. Płacisz tylko za faktycznie wysłane wiadomości, od 0,075 zł/SMS, bez abonamentu i bez minimów wysyłki. Statusy dostarczenia odbierasz webhookiem (DLR), a infrastruktura stoi w Polsce (SLA 99,9%).
 
 Na start **100 SMS-ów gratis, bez podawania karty** – akurat tyle, żeby przetestować na produkcji własnego kodu:
 **https://sendly.link**
