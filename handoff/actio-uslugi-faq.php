@@ -176,7 +176,7 @@ add_action( 'template_redirect', function () {
 					. '<div style="font-size:1.1rem;font-weight:700;color:#ee7f17;margin-bottom:6px;line-height:1.3;">' . esc_html( $f[0] ) . '</div>'
 					. '<div style="font-size:0.95rem;color:#444444;line-height:1.55;">' . esc_html( $f[1] ) . '</div></div>';
 			}
-			$whyblock = '<section class="actio-why-section" style="max-width:920px;margin:48px auto;padding:0 20px;">'
+			$whyblock = '<section class="actio-why-section" style="max-width:980px;margin:48px auto;padding:0 20px;">'
 				. '<h2 style="font-size:1.6rem;margin-bottom:18px;">Dlaczego Actio?</h2>'
 				. '<div style="display:flex;flex-wrap:wrap;gap:14px;">' . $cards . '</div></section>';
 		}
@@ -206,7 +206,7 @@ add_action( 'template_redirect', function () {
 				}
 				$tbody .= '</tr>';
 			}
-			$tableblock = '<section class="actio-tabela-section" style="max-width:880px;margin:48px auto;padding:0 20px;">'
+			$tableblock = '<section class="actio-tabela-section" style="max-width:980px;margin:48px auto;padding:0 20px;">'
 				. '<h2 style="font-size:1.6rem;margin-bottom:16px;">' . esc_html( $table['title'] ) . '</h2>'
 				. '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;">'
 				. '<thead>' . $thead . '</thead><tbody>' . $tbody . '</tbody></table></div></section>';
@@ -228,7 +228,7 @@ add_action( 'template_redirect', function () {
 				);
 			}
 			$faq_style = '<style>'
-				. '.actio-faq-section{max-width:880px;width:100%;box-sizing:border-box;margin:48px auto;padding:0 20px;}'
+				. '.actio-faq-section{max-width:980px;width:100%;box-sizing:border-box;margin:48px auto;padding:0 20px;}'
 				. '.actio-faq-section details{width:100%;box-sizing:border-box;border-bottom:1px solid #e5e7eb;}'
 				. '.actio-faq-section summary{display:flex;justify-content:space-between;align-items:center;gap:14px;list-style:none;cursor:pointer;font-weight:600;font-size:1.05rem;color:#1d2233;padding:16px 0;}'
 				. '.actio-faq-section summary::-webkit-details-marker{display:none;}'
