@@ -12,6 +12,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 function actio_uslugi_faq_data() {
 	return array(
+		'/uslugi/ai-voicebot' => array(
+			'Czym jest AI Voicebot?' => 'To głosowy chatbot oparty na sztucznej inteligencji – rozpoznaje mowę, rozumie intencję rozmówcy i odpowiada naturalnym językiem. Odbiera połączenia i prowadzi rozmowę zamiast sztywnego menu IVR.',
+			'Co AI Voicebot może załatwić w rozmowie?' => 'Obsługuje powtarzalne zapytania, udziela informacji, zbiera dane od dzwoniącego i kieruje rozmowę do właściwej osoby lub działu. Gdy sprawa wykracza poza scenariusz, przekazuje rozmowę do konsultanta.',
+			'Czy voicebot działa całą dobę?' => 'Tak. Odbiera połączenia 24/7, także poza godzinami pracy – bez kolejek i bez nieodebranych telefonów.',
+			'Czy podłączę go do swojej centrali i numeru?' => 'Tak. AI Voicebot działa na infrastrukturze telefonicznej Actio – numeracji, VoIP, SIP Trunk i centrali (np. 3CX) – bez wymiany sprzętu.',
+			'W jakim języku rozmawia voicebot?' => 'Po polsku, w sposób naturalny dla rozmówcy. Inne języki są możliwe zależnie od konfiguracji.',
+			'Czy otrzymam transkrypcje i statystyki rozmów?' => 'Tak. Rozmowy są automatycznie transkrybowane, co ułatwia analizę i kontrolę jakości obsługi.',
+			'Czy voicebot zastępuje konsultantów?' => 'Nie zastępuje – odciąża. Przejmuje powtarzalne i proste rozmowy, a trudniejsze przekazuje do człowieka, dzięki czemu zespół zajmuje się tym, co naprawdę wymaga uwagi.',
+			'Jak wygląda wdrożenie AI Voicebota?' => 'Konsultacyjnie: ustalamy scenariusz pod Twoje procesy, konfigurujemy voicebota i podłączamy go do Twojej telefonii. Wdrożenie i wsparcie po stronie Actio.',
+		),
 		'/uslugi/sip-trunk' => array(
 			'Czym jest SIP Trunk i czym różni się od tradycyjnych łączy ISDN?' => 'SIP Trunk to wirtualne łącze głosowe działające przez internet (VoIP), które zastępuje fizyczne linie ISDN/PSTN. Podłącza Twoją centralę telefoniczną do publicznej sieci przez protokół SIP – bez dzierżawy łączy miedzianych, taniej i z łatwą skalowalnością.',
 			'Czy zachowam swój obecny numer telefonu?' => 'Tak. Actio jest operatorem zarejestrowanym w UKE i obsługuje przeniesienie numerów (MNP). Zachowujesz dotychczasową numerację, a pierwsze 3 miesiące są bez opłat abonamentowych.',
@@ -57,6 +67,19 @@ function actio_uslugi_faq_data() {
 
 function actio_uslugi_tabele_data() {
 	return array(
+		'/uslugi/ai-voicebot' => array(
+			'title' => 'AI Voicebot vs tradycyjna infolinia / IVR',
+			'cols'  => array( 'Cecha', 'AI Voicebot (Actio)', 'Tradycyjna infolinia / IVR' ),
+			'rows'  => array(
+				array( 'Dostępność', '24/7, bez kolejek', 'Ograniczona godzinami i obsadą' ),
+				array( 'Sposób rozmowy', 'Naturalny język (AI)', 'Sztywne menu „wybierz 1…"' ),
+				array( 'Powtarzalne zapytania', 'Obsługa automatyczna', 'Angażują konsultanta' ),
+				array( 'Obsługa w szczycie', 'Wiele rozmów równolegle', 'Limit liczby konsultantów' ),
+				array( 'Transkrypcje rozmów', 'Automatyczne', 'Ręczne lub brak' ),
+				array( 'Integracja', 'Telefonia Actio (VoIP / SIP / 3CX)', 'Zależna od systemu' ),
+				array( 'Koszt przy wzroście ruchu', 'Stabilny', 'Rośnie z obsadą' ),
+			),
+		),
 		'/uslugi/sip-trunk' => array(
 			'title' => 'SIP Trunk vs tradycyjne łącza ISDN / PSTN',
 			'cols'  => array( 'Cecha', 'SIP Trunk (Actio)', 'Tradycyjne ISDN / PSTN' ),
@@ -120,6 +143,7 @@ function actio_uslugi_why_slugs() {
 		'/uslugi/wirtualna-centrala',
 		'/uslugi/sms-api',
 		'/uslugi/wirtualny-numer-komorkowy-voip',
+		'/uslugi/ai-voicebot',
 		'/o-nas',
 	);
 }

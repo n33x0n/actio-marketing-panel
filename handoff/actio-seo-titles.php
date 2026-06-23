@@ -17,6 +17,7 @@ function actio_seo_title_map() {
 		'/telefonia-voip-dla-firm'                  => 'Telefonia VoIP dla firm – kompletna komunikacja | Actio',
 		'/uslugi/sip-trunk'                         => 'SIP Trunk dla firm – podłącz centralę do VoIP | Actio',
 		'/uslugi/wirtualny-numer-komorkowy-voip'    => 'Wirtualny numer komórkowy VoIP – GSM bez karty SIM | Actio',
+		'/uslugi/ai-voicebot'                       => 'AI Voicebot dla firm – inteligentny asystent głosowy | Actio',
 		'/cennik'                                   => 'Cennik telefonii VoIP dla firm – pakiety i ceny | Actio',
 	);
 }
