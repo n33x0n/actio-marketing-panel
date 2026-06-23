@@ -186,29 +186,33 @@ add_action( 'template_redirect', function () {
 		if ( $table ) {
 			$thead = '<tr>';
 			foreach ( $table['cols'] as $i => $c ) {
-				$bg = ( $i === 1 ) ? 'background:#ee7f17;color:#ffffff;' : 'background:#f3f4f6;color:#1d2233;';
-				$thead .= '<th style="text-align:left;padding:12px 14px;font-size:0.98rem;border:1px solid #e5e7eb;' . $bg . '">' . esc_html( $c ) . '</th>';
+				$cls = ( $i === 1 ) ? ' class="hi"' : '';
+				$thead .= '<th' . $cls . '>' . esc_html( $c ) . '</th>';
 			}
 			$thead .= '</tr>';
 			$tbody = '';
 			foreach ( $table['rows'] as $r ) {
 				$tbody .= '<tr>';
 				foreach ( $r as $i => $cell ) {
-					$style = 'padding:11px 14px;border:1px solid #e5e7eb;line-height:1.5;font-size:0.95rem;vertical-align:top;';
-					if ( $i === 0 ) {
-						$style .= 'font-weight:600;color:#1d2233;background:#fafbfc;';
-					} elseif ( $i === 1 ) {
-						$style .= 'background:#fff8ee;color:#1d2233;';
-					} else {
-						$style .= 'color:#555555;';
-					}
-					$tbody .= '<td style="' . $style . '">' . esc_html( $cell ) . '</td>';
+					$cls = ( $i === 0 ) ? ' class="feat"' : ( ( $i === 1 ) ? ' class="hi"' : ' class="alt"' );
+					$tbody .= '<td' . $cls . '>' . esc_html( $cell ) . '</td>';
 				}
 				$tbody .= '</tr>';
 			}
-			$tableblock = '<section class="actio-tabela-section" style="max-width:980px;margin:48px auto;padding:0 20px;">'
-				. '<h2 style="font-size:1.6rem;margin-bottom:16px;">' . esc_html( $table['title'] ) . '</h2>'
-				. '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;">'
+			$tbl_style = '<style>'
+				. '.actio-tabela-section{max-width:980px;width:100%;box-sizing:border-box;margin:48px auto;padding:0 20px;}'
+				. '.actio-tabela-section h2{font-size:1.6rem;margin-bottom:16px;}'
+				. '.actio-tabela-section table{width:100%;border-collapse:collapse;font-size:0.95rem;}'
+				. '.actio-tabela-section th,.actio-tabela-section td{border:1px solid #e5e7eb;padding:11px 14px;text-align:left;vertical-align:top;line-height:1.5;background-clip:padding-box;}'
+				. '.actio-tabela-section th{font-weight:700;font-size:0.98rem;background:#f3f4f6;color:#1d2233;}'
+				. '.actio-tabela-section th.hi{background:#ee7f17;color:#ffffff;}'
+				. '.actio-tabela-section td.hi{background:#fff8ee;color:#1d2233;}'
+				. '.actio-tabela-section td.feat{background:#fafbfc;font-weight:600;color:#1d2233;}'
+				. '.actio-tabela-section td.alt{color:#555555;}'
+				. '</style>';
+			$tableblock = '<section class="actio-tabela-section">' . $tbl_style
+				. '<h2>' . esc_html( $table['title'] ) . '</h2>'
+				. '<div style="overflow-x:auto;"><table>'
 				. '<thead>' . $thead . '</thead><tbody>' . $tbody . '</tbody></table></div></section>';
 		}
 
