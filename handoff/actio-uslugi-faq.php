@@ -218,16 +218,25 @@ add_action( 'template_redirect', function () {
 			$items    = '';
 			$entities = array();
 			foreach ( $faq as $q => $a ) {
-				$items .= '<details class="actio-faq-item" style="border-bottom:1px solid #e5e7eb;padding:16px 0;">'
-					. '<summary style="cursor:pointer;font-weight:600;font-size:1.05rem;list-style:none;">' . esc_html( $q ) . '</summary>'
-					. '<div style="margin-top:10px;color:#444;line-height:1.65;">' . esc_html( $a ) . '</div></details>';
+				$items .= '<details class="actio-faq-item">'
+					. '<summary>' . esc_html( $q ) . '</summary>'
+					. '<div class="actio-faq-a">' . esc_html( $a ) . '</div></details>';
 				$entities[] = array(
 					'@type'          => 'Question',
 					'name'           => $q,
 					'acceptedAnswer' => array( '@type' => 'Answer', 'text' => $a ),
 				);
 			}
-			$section = '<section class="actio-faq-section" style="max-width:880px;margin:48px auto;padding:0 20px;">'
+			$faq_style = '<style>'
+				. '.actio-faq-section{max-width:880px;width:100%;box-sizing:border-box;margin:48px auto;padding:0 20px;}'
+				. '.actio-faq-section details{width:100%;box-sizing:border-box;border-bottom:1px solid #e5e7eb;}'
+				. '.actio-faq-section summary{display:flex;justify-content:space-between;align-items:center;gap:14px;list-style:none;cursor:pointer;font-weight:600;font-size:1.05rem;color:#1d2233;padding:16px 0;}'
+				. '.actio-faq-section summary::-webkit-details-marker{display:none;}'
+				. '.actio-faq-section summary::after{content:"";flex:0 0 auto;width:9px;height:9px;border-right:2px solid #ee7f17;border-bottom:2px solid #ee7f17;transform:rotate(45deg);transition:transform .2s ease;margin:0 4px 4px 0;}'
+				. '.actio-faq-section details[open] summary::after{transform:rotate(-135deg);}'
+				. '.actio-faq-section .actio-faq-a{padding:0 0 16px;color:#444;line-height:1.65;}'
+				. '</style>';
+			$section = '<section class="actio-faq-section">' . $faq_style
 				. '<h2 style="font-size:1.6rem;margin-bottom:8px;">Najczęstsze pytania (FAQ)</h2>' . $items . '</section>';
 			$ld     = array(
 				'@context'   => 'https://schema.org',
