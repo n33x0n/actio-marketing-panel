@@ -78,8 +78,16 @@ def _env(key: str, default: str | None = None) -> str | None:
 
 
 def _engines() -> list[dict]:
-    out = [{"label": "perplexity-sonar", "model": "perplexity/sonar", "kind": "live-web"}]
-    param = _env("OPENROUTER_MODEL") or "openai/gpt-4o-mini"
+    # Chatboty w trybie :online (OpenRouter dokleja web-search) – odwzorowuje realne
+    # odpowiedzi konsumenckich chatbotów (które korzystają z sieci). + parametryczny baseline.
+    out = [
+        {"label": "perplexity-sonar", "model": "perplexity/sonar", "kind": "live-web"},
+        {"label": "chatgpt", "model": "openai/gpt-5.4:online", "kind": "live-web"},
+        {"label": "claude", "model": "anthropic/claude-sonnet-4.6:online", "kind": "live-web"},
+        {"label": "gemini", "model": "google/gemini-2.5-flash:online", "kind": "live-web"},
+        {"label": "grok", "model": "x-ai/grok-4.3:online", "kind": "live-web"},
+    ]
+    param = _env("OPENROUTER_MODEL") or "openai/gpt-5.4"
     out.append({"label": "parametric", "model": param, "kind": "parametric"})
     return out
 
