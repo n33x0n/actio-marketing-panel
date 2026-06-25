@@ -365,8 +365,6 @@ def render_md() -> str:
 
 ## ℹ️ Notatka metodologiczna
 
-- Konwersje GA4: event `generate_lead` (formularz CF7, klik tel:, lub potwierdzenie rejestracji konta `/registration_confirm/`) – różni się od Google Ads attribution (Ads liczy klik-conversion 30d window, GA4 last-click sesji)
-- "Konwersje direct" to często **pokłosie reklam** – user widzi ad, googluje brand za 1-3 dni, wchodzi direct, konwertuje
 - Wartość konwersji (`conv_value`) jest dynamiczna od 18.05: zależna od strony z której przyszedł lead (SIP Trunk 2400 zł, 3CX 3000 zł, SMS API 3600 zł, Wirtualna Centrala 3300 zł, Actio Mobile 360 zł, rejestracja konta 1500 zł, generic VoIP 1200 zł, default 900 zł)
 
 """
