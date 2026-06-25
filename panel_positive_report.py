@@ -348,6 +348,18 @@ def render_md() -> str:
         short = p["page"].replace("https://actio.pl", "") or "/"
         md += f"| {i} | `{short}` | {fmt(p['imp'])} | {fmt(p['clk'])} | {p['avg_pos']:.1f} |\n"
 
+    # Widoczność w chatbotach AI (GEO) – ta sama macierz co w raporcie CMO
+    try:
+        import geo_report
+        with sqlite3.connect(DB_PATH) as _gc:
+            _geo = geo_report.geo_section(_gc)
+        md += ("\n---\n\n## 🤖 Widoczność w chatbotach AI (GEO)\n\n"
+               "_Na jakich asystentach AI (ChatGPT, Claude, Gemini, Grok, Perplexity) pojawia się Actio "
+               "przy zapytaniach kupujących VoIP. Pomiar dwutygodniowy._\n\n"
+               + "\n".join(_geo) + "\n")
+    except Exception:
+        pass
+
     md += f"""
 ---
 
