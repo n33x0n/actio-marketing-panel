@@ -512,15 +512,6 @@ def generate_report() -> dict:
         alerts=triggered_alerts,
         obsidian_url=report_url,
     )
-    # Dead-man-switch: heartbeat do Uptime Kuma (Push monitor) — tylko po pełnym przejściu raportu.
-    # Brak pingu (job się nie odpalił / padł wcześniej) → Kuma alarmuje po przekroczeniu interwału.
-    _kuma = os.environ.get("KUMA_PUSH_URL")
-    if _kuma:
-        try:
-            import urllib.request
-            urllib.request.urlopen(_kuma, timeout=10).read()
-        except Exception as e:
-            print(f"kuma heartbeat error: {e}")
     return {
         "date": data["date"],
         "report_md": report_md,
