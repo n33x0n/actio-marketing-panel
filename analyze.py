@@ -294,6 +294,7 @@ def call_openrouter(prompt: str) -> str:
     resp = client.chat.completions.create(
         model=_env("OPENROUTER_MODEL", "anthropic/claude-opus-4.7"),
         messages=[{"role": "user", "content": prompt}],
+        max_tokens=8000,
         extra_body={"provider": {"data_collection": "deny"}},
         name="daily_report_cmo",
         metadata={"source": "analyze.py", "use_case": "daily_report"},
