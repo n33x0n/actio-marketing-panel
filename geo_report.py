@@ -160,6 +160,11 @@ def build_report(as_section: bool = False) -> str:
     conn.close()
     parts += [""] + gsc_brand()
     parts += [""] + ga4_ai_referrers()
+    try:
+        import ai_bot_report
+        parts += [""] + ai_bot_report.build_section(7)
+    except Exception as e:
+        parts += ["", f"Boty AI: blad ({type(e).__name__})"]
     parts += ["", "_Pomiar: geo_monitor.py (biweekly, Mikrus). Plan dzialan: Todoist GEO/AI-SEO A/B/C._"]
     return "\n".join(parts)
 
