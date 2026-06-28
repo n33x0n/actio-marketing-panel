@@ -357,6 +357,11 @@ def render_md() -> str:
                "_Na jakich asystentach AI (ChatGPT, Claude, Gemini, Grok, Perplexity) pojawia się Actio "
                "przy zapytaniach kupujących VoIP. Pomiar dwutygodniowy._\n\n"
                + "\n".join(_geo) + "\n")
+        try:
+            import ai_bot_report
+            md += "\n" + "\n".join(ai_bot_report.build_section()) + "\n"
+        except Exception:
+            pass
     except Exception:
         pass
 
