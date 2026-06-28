@@ -158,13 +158,13 @@ def build_report(as_section: bool = False) -> str:
     parts = [header, ""]
     parts += geo_section(conn)
     conn.close()
-    parts += [""] + gsc_brand()
-    parts += [""] + ga4_ai_referrers()
     try:
         import ai_bot_report
         parts += [""] + ai_bot_report.build_section(7)
     except Exception as e:
         parts += ["", f"Boty AI: blad ({type(e).__name__})"]
+    parts += [""] + gsc_brand()
+    parts += [""] + ga4_ai_referrers()
     return "\n".join(parts)
 
 
