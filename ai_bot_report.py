@@ -34,34 +34,45 @@ def fetch(days: int = 7) -> dict | None:
         return json.loads(r.read())
 
 
-def build_section(days: int = 7) -> list[str]:
+def _purpose_line(d: dict | None) -> str:
+    if not d:
+        return "-"
+    bp = {r["purpose"]: int(r["hits"]) for r in d.get("by_purpose", [])}
+    return f"retrieval/cytowanie {bp.get('search', 0)} · trening {bp.get('train', 0)} · inne {bp.get('other', 0)}"
+
+
+def build_section(days: int = 30) -> list[str]:
+    """Sekcja: puls 7 dni + szczegoly 30 dni (tabela botow + top strony)."""
     if not _env("ACTIO_AIBOT_TOKEN"):
         return ["### Boty AI na actio.pl", "(brak ACTIO_AIBOT_TOKEN – pomijam)"]
     try:
-        d = fetch(days)
+        d7 = fetch(7)
+        d30 = fetch(30)
     except Exception as e:
         return ["### Boty AI na actio.pl", f"(błąd odczytu: {type(e).__name__}: {e})"]
-    if not d:
-        return ["### Boty AI na actio.pl", "(brak danych)"]
 
-    out = ["### Boty AI czytające actio.pl (ostatnie %d dni)" % d.get("days", days)]
-    total = d.get("total", 0)
-    bp = {r["purpose"]: int(r["hits"]) for r in d.get("by_purpose", [])}
-    out.append(f"**Wizyty łącznie: {total}** — retrieval/cytowanie: {bp.get('search',0)} · trening: {bp.get('train',0)} · inne: {bp.get('other',0)}")
-    if total == 0:
-        out.append("_Brak wizyt botów AI w oknie. Jeśli utrzyma się dłużej → AI nas nie odwiedza = nie ma z czego cytować._")
+    t7 = d7.get("total", 0) if d7 else 0
+    t30 = d30.get("total", 0) if d30 else 0
+    out = ["### Boty AI czytające actio.pl"]
+    out.append(f"**Ostatnie 7 dni: {t7} wizyt** — {_purpose_line(d7)}")
+    out.append(f"**Z ostatnich 30 dni: {t30} wizyt** — {_purpose_line(d30)}")
+
+    if t30 == 0:
+        out.append("_Brak wizyt botów AI. Jeśli się utrzyma → AI nas nie pobiera = nie ma z czego cytować._")
         return out
-    by_bot = d.get("by_bot", [])
+
+    by_bot = (d30 or {}).get("by_bot", [])
     if by_bot:
         out.append("")
+        out.append("Wg bota (30 dni):")
         out.append("| bot | cel | wizyty | ostatnio |")
         out.append("|---|---|---:|---|")
         for r in by_bot[:12]:
             out.append(f"| {r['bot']} | {r['purpose']} | {r['hits']} | {str(r['last_seen'])[:10]} |")
-    tp = d.get("top_paths", [])
+    tp = (d30 or {}).get("top_paths", [])
     if tp:
         out.append("")
-        out.append("Najczęściej czytane: " + ", ".join(f"`{p['path'][:48]}` ({p['hits']})" for p in tp[:6]))
+        out.append("Najczęściej czytane (30 dni): " + ", ".join(f"`{p['path'][:48]}` ({p['hits']})" for p in tp[:6]))
     return out
 
 

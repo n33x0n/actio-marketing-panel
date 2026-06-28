@@ -160,7 +160,7 @@ def build_report(as_section: bool = False) -> str:
     conn.close()
     try:
         import ai_bot_report
-        parts += [""] + ai_bot_report.build_section(7)
+        parts += [""] + ai_bot_report.build_section()
     except Exception as e:
         parts += ["", f"Boty AI: blad ({type(e).__name__})"]
     parts += [""] + gsc_brand()
