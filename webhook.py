@@ -294,3 +294,51 @@ async def sms_webhook(request: Request):
     print(f"[sms_webhook] {etype or 'unknown'} :: {rec['raw'][:300]}")
 
     return {"received": True}
+
+
+# ─── Monitor botów AI (replatform actio-ai-bot-logger.php na Cloudflare) ─────
+# CF Pages middleware (functions/_middleware.js w repo actio-www) wykrywa boty AI
+# na edge i POST-uje tu wizytę. Pod /autopost/ → publiczne (omija CF Access).
+# Auth: nagłówek X-Aibot-Token. Odczyt: ai_bot_report.py (lokalny SQLite).
+_AIBOT_DDL = """
+CREATE TABLE IF NOT EXISTS ai_bot_hits (
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    hit_time  TEXT NOT NULL DEFAULT (datetime('now')),
+    bot       TEXT NOT NULL,
+    purpose   TEXT NOT NULL,
+    path      TEXT,
+    ua        TEXT
+);
+"""
+try:
+    with db._connect(_db_path()) as _c:
+        _c.execute(_AIBOT_DDL)
+        _c.execute("CREATE INDEX IF NOT EXISTS idx_aibot_time ON ai_bot_hits(hit_time)")
+except Exception as _e:
+    print(f"[aibot] init table failed: {_e}")
+
+_AIBOT_TOKEN = os.environ.get("ACTIO_AIBOT_TOKEN", "act_aib_9Kx2Qp7Vt4Lr8Ns3Wd6Yf1Hj5")
+
+
+@app.post("/autopost/aibot")
+async def aibot_log(request: Request):
+    if not secrets.compare_digest(request.headers.get("X-Aibot-Token", ""), _AIBOT_TOKEN):
+        raise HTTPException(403, "forbidden")
+    try:
+        p = json.loads(await request.body() or b"{}")
+    except Exception:
+        p = {}
+    bot = (p.get("bot") or "")[:64]
+    if not bot:
+        return {"ok": False}
+    rec = {"bot": bot, "purpose": (p.get("purpose") or "other")[:16],
+           "path": (p.get("path") or "")[:512], "ua": (p.get("ua") or "")[:512]}
+    try:
+        with db._connect(_db_path()) as conn:
+            conn.execute(
+                "INSERT INTO ai_bot_hits (bot, purpose, path, ua) VALUES (:bot, :purpose, :path, :ua)", rec
+            )
+    except Exception as e:
+        print(f"[aibot] insert failed: {e}")
+        return {"ok": False}
+    return {"ok": True}
