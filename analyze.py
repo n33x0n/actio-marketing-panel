@@ -291,15 +291,28 @@ def call_openrouter(prompt: str) -> str:
         },
         timeout=180.0,
     )
-    resp = client.chat.completions.create(
-        model=_env("OPENROUTER_MODEL", "anthropic/claude-opus-4.7"),
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=8000,
-        extra_body={"provider": {"data_collection": "deny"}},
-        name="daily_report_cmo",
-        metadata={"source": "analyze.py", "use_case": "daily_report"},
-    )
-    return resp.choices[0].message.content
+    def _call(model: str) -> str | None:
+        resp = client.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": prompt}],
+            # Fable 5 ma zawsze wlaczony thinking (liczy sie do completion) - 16k daje zapas na raport
+            max_tokens=16000,
+            extra_body={"provider": {"data_collection": "deny"}},
+            name="daily_report_cmo",
+            metadata={"source": "analyze.py", "use_case": "daily_report"},
+        )
+        return resp.choices[0].message.content
+
+    primary = _env("OPENROUTER_MODEL", "anthropic/claude-fable-5")
+    fallback = _env("OPENROUTER_FALLBACK_MODEL", "anthropic/claude-opus-4.8")
+    try:
+        out = _call(primary)
+        if out and out.strip():
+            return out
+        print(f"[call_openrouter] pusty output z {primary} - fallback na {fallback}")
+    except Exception as e:
+        print(f"[call_openrouter] {primary} padl ({type(e).__name__}: {e}) - fallback na {fallback}")
+    return _call(fallback)
 
 
 def _build_report_content(date_iso: str, report_md: str, sync_status: dict) -> str:
