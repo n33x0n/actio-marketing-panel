@@ -132,18 +132,40 @@ def ga4_ai_referrers() -> list[str]:
             date_ranges=[DateRange(start_date="30daysAgo", end_date="today")],
         )
         resp = cl.run_report(req)
-        ai = []
+        sessions: dict[str, int] = {}
         for row in resp.rows:
-            src = row.dimension_values[0].value.lower()
-            if any(k in src for k in AI_REFERRERS):
-                ai.append((row.dimension_values[0].value, int(row.metric_values[0].value)))
-        ai.sort(key=lambda x: -x[1])
-        out = ["GA4 ruch z AI-referrerow (30 dni):"]
-        if ai:
-            for s, n in ai:
-                out.append(f"  - {s}: {n} sesji")
+            src = row.dimension_values[0].value
+            if any(k in src.lower() for k in AI_REFERRERS):
+                sessions[src] = sessions.get(src, 0) + int(row.metric_values[0].value)
+
+        # leady (generate_lead) per zrodlo sesji
+        from google.analytics.data_v1beta.types import Filter, FilterExpression
+        req_leads = RunReportRequest(
+            property=f"properties/{prop}",
+            dimensions=[Dimension(name="sessionSource")],
+            metrics=[Metric(name="eventCount")],
+            date_ranges=[DateRange(start_date="30daysAgo", end_date="today")],
+            dimension_filter=FilterExpression(filter=Filter(
+                field_name="eventName",
+                string_filter=Filter.StringFilter(value="generate_lead"),
+            )),
+        )
+        leads: dict[str, int] = {}
+        for row in cl.run_report(req_leads).rows:
+            src = row.dimension_values[0].value
+            if any(k in src.lower() for k in AI_REFERRERS):
+                leads[src] = leads.get(src, 0) + int(row.metric_values[0].value)
+
+        srcs = sorted(set(sessions) | set(leads), key=lambda s: (-leads.get(s, 0), -sessions.get(s, 0)))
+        out = ["**Ruch i leady z czatbotow AI (GA4, 30 dni):**", ""]
+        if srcs:
+            out.append("| zrodlo | sesje | leady (generate_lead) |")
+            out.append("|---|---:|---:|")
+            for s in srcs:
+                out.append(f"| {s} | {sessions.get(s, 0)} | {leads.get(s, 0)} |")
+            out.append(f"| **razem** | **{sum(sessions.values())}** | **{sum(leads.values())}** |")
         else:
-            out.append("  - 0 sesji z chatgpt/perplexity/gemini/copilot (jeszcze nas tam nie ma / brak ruchu)")
+            out.append("0 sesji z chatgpt/perplexity/gemini/copilot (jeszcze nas tam nie ma / brak ruchu)")
         return out
     except Exception as e:
         return [f"GA4 AI-referrers: blad ({type(e).__name__}: {e})"]
