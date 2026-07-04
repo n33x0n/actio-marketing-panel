@@ -362,6 +362,11 @@ def render_md() -> str:
             md += "\n" + "\n".join(ai_bot_report.build_section()) + "\n"
         except Exception:
             pass
+        # Ruch i leady z czatbotow AI (GA4) – ta sama tabela sesje+leady co w raporcie CMO
+        try:
+            md += "\n" + "\n".join(geo_report.ga4_ai_referrers()) + "\n"
+        except Exception:
+            pass
     except Exception:
         pass
 
