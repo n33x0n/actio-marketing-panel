@@ -101,17 +101,12 @@ _PILLAR_PRIORITY = [
     "heritage_trust", "kontakt_cta",
 ]
 
-# Istniejące posty FB (z kalendarza, potwierdzone przez API) – date → pillar (slot AM)
-EXISTING = {
-    "2026-06-06": "voip_edukacja", "2026-06-08": "sms_api", "2026-06-10": "actio_mobile",
-    "2026-06-12": "wirtualna_centrala", "2026-06-13": "voip_edukacja", "2026-06-15": "cennik",
-    "2026-06-17": "ai_voicebot", "2026-06-19": "wirtualny_numer", "2026-06-20": "heritage_trust",
-    "2026-06-22": "sip_trunk", "2026-06-24": "3cx", "2026-06-26": "sms_voip",
-    "2026-06-27": "voip_edukacja", "2026-06-29": "kontakt_cta",
-}
+# Istniejące posty FB (date → pillar slotu AM) – dla nich AM nie tworzy nowego FB, tylko PM.
+# Lipiec 2026: brak ręcznego kalendarza AM → puste, więc AM+PM = pełne FB+IG (2 posty/dzień jak czerwiec).
+EXISTING = {}
 
-WINDOW_START = datetime.date(2026, 6, 6)
-WINDOW_END = datetime.date(2026, 6, 30)
+WINDOW_START = datetime.date(2026, 7, 6)
+WINDOW_END = datetime.date(2026, 7, 31)
 AM_TIME, PM_TIME = "09:00", "17:00"
 
 
