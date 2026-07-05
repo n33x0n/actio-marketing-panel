@@ -376,11 +376,22 @@ def generate(dry_run: bool = False, limit: int | None = None, only_channel: str 
             print(f"  {s['date']} {s['time']} [{s['intent']:6}] {s['pillar']:20} · {s['format']:16} · {s.get('industry') or '-':20} → {fb}")
         return {"plan": len(plan), "dry_run": True}
 
-    stats = {"images": 0, "fb": 0, "ig": 0, "errors": 0}
+    # resume: pomin sloty juz wygenerowane (idempotentnosc, gdy poprzedni run zostal przerwany)
+    import sqlite3 as _sql
+    _c = _sql.connect(path)
+    _existing = {r[0] for r in _c.execute(
+        "SELECT DISTINCT scheduled_time FROM social_posts WHERE status IN ('generated','scheduled')").fetchall()}
+    _c.close()
+
+    stats = {"images": 0, "fb": 0, "ig": 0, "errors": 0, "skipped": 0}
     done = 0
     for slot in plan:
         if limit and done >= limit:
             break
+        if f"{slot['date']} {slot['time']}" in _existing:
+            stats["skipped"] += 1
+            print(f"  ⏭ pominieto (juz jest): {slot['date']} {slot['time']}")
+            continue
         primary = "facebook" if slot["fb_needed"] else "instagram"
         try:
             prim_copy = generate_copy(slot, primary)
