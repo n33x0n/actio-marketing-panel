@@ -240,10 +240,12 @@ def validate_plan(plan: list[dict]) -> list[str]:
     dupes = {p for p in pairs if pairs.count(p) > 1}
     if dupes:
         errs.append(f"Powtórzone pary (pillar,format): {dupes}")
-    # FB count
+    # FB count: auto-FB = wszystkie sloty minus AM zajete recznym kalendarzem (EXISTING).
+    # Czerwiec: 50 - 14 = 36. Lipiec (EXISTING={}): 52 - 0 = 52 (pelne 2 FB/dzien).
     fb = sum(1 for s in plan if s["fb_needed"])
-    if fb != 36:
-        errs.append(f"FB-needed = {fb} (oczekiwano 36)")
+    expected_fb = len(plan) - len(EXISTING)
+    if fb != expected_fb:
+        errs.append(f"FB-needed = {fb} (oczekiwano {expected_fb})")
     return errs
 
 
