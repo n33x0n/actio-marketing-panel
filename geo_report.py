@@ -18,7 +18,9 @@ import sqlite3
 from datetime import date, timedelta
 
 BASE_DIR = pathlib.Path(__file__).resolve().parent
-AI_REFERRERS = ("chatgpt", "openai", "perplexity", "gemini", "copilot", "claude")
+AI_REFERRERS = ("chatgpt", "openai", "perplexity", "gemini", "copilot", "claude", "grok", "x.ai")
+# Rozbudowany rozkład AI-leadów (typ konwersji + landing + strona-konwersji). Flaga = łatwy rollback.
+AI_LEADS_DETAIL = True
 
 
 def _env(key: str, default: str | None = None) -> str | None:
@@ -158,14 +160,82 @@ def ga4_ai_referrers() -> list[str]:
 
         srcs = sorted(set(sessions) | set(leads), key=lambda s: (-leads.get(s, 0), -sessions.get(s, 0)))
         out = ["**Ruch i leady z czatbotow AI (GA4, 30 dni):**", ""]
-        if srcs:
-            out.append("| zrodlo | sesje | leady (generate_lead) |")
-            out.append("|---|---:|---:|")
-            for s in srcs:
-                out.append(f"| {s} | {sessions.get(s, 0)} | {leads.get(s, 0)} |")
-            out.append(f"| **razem** | **{sum(sessions.values())}** | **{sum(leads.values())}** |")
+        if not srcs:
+            out.append("0 sesji z chatgpt/claude/perplexity/gemini/copilot/grok (jeszcze nas tam nie ma / brak ruchu)")
+            return out
+
+        # --- rozbudowa: typ konwersji + landing + strona-konwersji per zrodlo ---
+        by_type: dict[str, dict[str, int]] = {}   # src -> {lead_type: count}
+        landing: dict[str, dict[str, int]] = {}    # src -> {path: sessions}
+        conv_page: dict[str, dict[str, int]] = {}  # src -> {path: generate_lead}
+        if AI_LEADS_DETAIL:
+            lead_filter = FilterExpression(filter=Filter(
+                field_name="eventName", string_filter=Filter.StringFilter(value="generate_lead")))
+
+            def _agg(target, dim, metric, flt=None):
+                try:
+                    r = cl.run_report(RunReportRequest(
+                        property=f"properties/{prop}",
+                        dimensions=[Dimension(name="sessionSource"), Dimension(name=dim)],
+                        metrics=[Metric(name=metric)],
+                        date_ranges=[DateRange(start_date="30daysAgo", end_date="today")],
+                        dimension_filter=flt,
+                    ))
+                    import re as _re
+                    for row in r.rows:
+                        src = row.dimension_values[0].value
+                        if not any(k in src.lower() for k in AI_REFERRERS):
+                            continue
+                        key = row.dimension_values[1].value or "(nieznany)"
+                        # zwin hash rejestracji do jednej sciezki (agregacja + czytelnosc)
+                        key = _re.sub(r"(/registration_confirm/)[0-9a-f]{16,}", r"\1", key.split("?")[0])
+                        n = int(row.metric_values[0].value)
+                        target.setdefault(src, {})[key] = target.setdefault(src, {}).get(key, 0) + n
+                except Exception:
+                    pass  # brak custom dimension / za malo danych -> pomijamy detal
+
+            _agg(by_type, "customEvent:lead_type", "eventCount", lead_filter)
+            _agg(landing, "landingPagePlusQueryString", "sessions")
+            _agg(conv_page, "pagePath", "eventCount", lead_filter)
+
+        types = ("phone", "registration", "form")
+        header = "| zrodlo | sesje | leady | telefon | rejestracja | formularz |" if AI_LEADS_DETAIL and by_type \
+            else "| zrodlo | sesje | leady (generate_lead) |"
+        sep = "|---|---:|---:|---:|---:|---:|" if AI_LEADS_DETAIL and by_type else "|---|---:|---:|"
+        out += [header, sep]
+        tot_t = {t: 0 for t in types}
+        for s in srcs:
+            se, le = sessions.get(s, 0), leads.get(s, 0)
+            if AI_LEADS_DETAIL and by_type:
+                bt = by_type.get(s, {})
+                vals = [bt.get(t, 0) for t in types]
+                for t, v in zip(types, vals):
+                    tot_t[t] += v
+                out.append(f"| {s} | {se} | {le} | " + " | ".join(str(v) for v in vals) + " |")
+            else:
+                out.append(f"| {s} | {se} | {le} |")
+        if AI_LEADS_DETAIL and by_type:
+            out.append(f"| **razem** | **{sum(sessions.values())}** | **{sum(leads.values())}** | "
+                       + " | ".join(f"**{tot_t[t]}**" for t in types) + " |")
         else:
-            out.append("0 sesji z chatgpt/perplexity/gemini/copilot (jeszcze nas tam nie ma / brak ruchu)")
+            out.append(f"| **razem** | **{sum(sessions.values())}** | **{sum(leads.values())}** |")
+
+        def _top(d: dict, s: str, n=3) -> str:
+            items = sorted(d.get(s, {}).items(), key=lambda x: -x[1])[:n]
+            return ", ".join(f"{p.split('?')[0]} ({c})" for p, c in items) if items else "–"
+
+        if AI_LEADS_DETAIL and landing:
+            out.append("")
+            out.append("_Landing (gdzie ląduje ruch AI):_")
+            for s in srcs:
+                if landing.get(s):
+                    out.append(f"- {s}: {_top(landing, s)}")
+        if AI_LEADS_DETAIL and conv_page:
+            out.append("")
+            out.append("_Strona konwersji (gdzie odpala się generate_lead):_")
+            for s in srcs:
+                if conv_page.get(s):
+                    out.append(f"- {s}: {_top(conv_page, s)}")
         return out
     except Exception as e:
         return [f"GA4 AI-referrers: blad ({type(e).__name__}: {e})"]
