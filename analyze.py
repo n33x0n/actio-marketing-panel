@@ -140,7 +140,12 @@ Podkampania bidująca na keywordy konkurentów (welyo/halonet/plfon/zadarma itd.
 ### Google Ads — top 20 keywords (7 dni)
 {ads_keywords_7d}
 
+### GSC — PEŁNE totale klików/impresji per dzień (7 dni, źródło prawdy dla KPI)
+{gsc_totals_7d}
+
 ### GSC — top 10 zapytań organic (7 dni)
+UWAGA: tabele per-query POMIJAJĄ zapytania anonimizowane (~95% klików actio.pl) — kliki=0 w tych
+tabelach to artefakt metody, NIE regres. KPI klików organic bierz WYŁĄCZNIE z totali powyżej.
 {gsc_queries_7d}
 
 ### GSC — top 10 stron landing (7 dni)
@@ -178,6 +183,12 @@ def run_all_syncs() -> dict[str, str]:
         results["gsc"] = f"OK ({db.upsert_gsc_rows(db_path, rows)} wierszy, {len(sites)} property)"
     except Exception as e:
         results["gsc"] = f"ERROR: {type(e).__name__}: {e}"
+
+    try:
+        rows = gsc.fetch_all_sites_totals()
+        results["gsc_totals"] = f"OK ({db.upsert_gsc_totals(db_path, rows)} dni)"
+    except Exception as e:
+        results["gsc_totals"] = f"ERROR: {type(e).__name__}: {e}"
 
     try:
         rows = ads.fetch_campaigns_last_7_days(ads_customer)
@@ -228,6 +239,7 @@ def collect_data_summary() -> dict[str, str]:
     kw_df = db.fetch_ads_keywords(db_path, days=7).head(20)
     gsc_q = db.fetch_gsc_top_queries(db_path, days=7, top=10)
     gsc_p = db.fetch_gsc_top_pages(db_path, days=7, top=10)
+    gsc_tot = db.fetch_gsc_totals(db_path, days=7)
 
     # Lead type breakdown (form vs phone) — z GTM custom dimensions
     lead_type_df = db.fetch_lead_events_breakdown(db_path, days=7, group_by="lead_type")
@@ -272,6 +284,7 @@ def collect_data_summary() -> dict[str, str]:
         "competitor_campaign_7d": _md(competitor_camp_df),
         "competitor_keywords_7d": _md(competitor_kw_df),
         "competitor_search_terms_7d": _md(competitor_terms_df),
+        "gsc_totals_7d": _md(gsc_tot),
         "gsc_queries_7d": _md(gsc_q),
         "gsc_pages_7d": _md(gsc_p),
         "lead_type_breakdown_7d": _md(lead_type_df),

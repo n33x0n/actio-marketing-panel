@@ -308,6 +308,55 @@ def upsert_gsc_rows(path: str, rows: list[dict]) -> int:
     return len(rows)
 
 
+def upsert_gsc_totals(path: str, rows: list[dict]) -> int:
+    """Totale GSC per data (bez wymiaru query — pelne kliki, wlacznie z anonimizowanymi)."""
+    if not rows:
+        return 0
+    with _connect(path) as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS gsc_totals (
+                date        TEXT NOT NULL,
+                site_url    TEXT NOT NULL,
+                impressions INTEGER NOT NULL,
+                clicks      INTEGER NOT NULL,
+                ctr         REAL NOT NULL,
+                position    REAL NOT NULL,
+                synced_at   TEXT NOT NULL DEFAULT (datetime('now')),
+                PRIMARY KEY (date, site_url)
+            )
+        """)
+        conn.executemany("""
+            INSERT INTO gsc_totals (date, site_url, impressions, clicks, ctr, position, synced_at)
+            VALUES (:date, :site_url, :impressions, :clicks, :ctr, :position, datetime('now'))
+            ON CONFLICT(date, site_url) DO UPDATE SET
+                impressions = excluded.impressions,
+                clicks      = excluded.clicks,
+                ctr         = excluded.ctr,
+                position    = excluded.position,
+                synced_at   = excluded.synced_at
+        """, rows)
+    return len(rows)
+
+
+def fetch_gsc_totals(path: str, days: int = 7) -> pd.DataFrame:
+    """Pelne totale GSC per data (zrodlo prawdy dla KPI klikow organic)."""
+    sql = """
+        SELECT date,
+               SUM(clicks)      AS clicks,
+               SUM(impressions) AS impressions,
+               ROUND(AVG(position), 1) AS avg_position
+        FROM gsc_totals
+        WHERE date >= date('now', ?)
+        GROUP BY date
+        ORDER BY date
+    """
+    with _connect(path) as conn:
+        try:
+            return pd.read_sql_query(sql, conn, params=[f"-{int(days) + 3} days"])
+        except Exception:
+            return pd.DataFrame()
+
+
 def fetch_gsc_top_queries(
     path: str,
     days: int = 30,
@@ -480,22 +529,32 @@ def fetch_recent_published_topics(path: str, limit: int = 7) -> list[dict]:
         return [{"keyword": r[0], "slug": r[1], "title": r[2], "published_at": r[3]} for r in cur.fetchall()]
 
 
+# Znane wartosci TESTOWE (testy E2E CC formularzy/widgetow) — wykluczane z raportowania leadow.
+# Surowe dane w DB zostaja nietkniete; filtr dziala tylko przy odczycie.
+TEST_PHONE_VALUES = ("0", "000000000", "48600000000", "600000000", "600100200", "48000000000")
+
+
 def fetch_lead_events_breakdown(path: str, days: int = 7, group_by: str = "lead_type") -> pd.DataFrame:
-    """Breakdown generate_lead per wybranym wymiarem (lead_type/form_id/phone_number/link_location/form_location)."""
+    """Breakdown generate_lead per wybranym wymiarem (lead_type/form_id/phone_number/link_location/form_location).
+
+    Wyklucza leady z testowymi numerami telefonu (TEST_PHONE_VALUES) — testy E2E CC.
+    """
     allowed = {"lead_type", "form_id", "phone_number", "link_text", "link_location", "form_location", "source_medium"}
     if group_by not in allowed:
         group_by = "lead_type"
+    placeholders = ",".join("?" for _ in TEST_PHONE_VALUES)
     sql = f"""
         SELECT {group_by},
                SUM(event_count) AS leads,
                COUNT(DISTINCT date) AS days_with_events
         FROM lead_events_daily
         WHERE date >= date('now', ?)
+          AND COALESCE(phone_number, '') NOT IN ({placeholders})
         GROUP BY {group_by}
         ORDER BY leads DESC
     """
     with _connect(path) as conn:
-        return pd.read_sql_query(sql, conn, params=[f"-{int(days)} days"])
+        return pd.read_sql_query(sql, conn, params=[f"-{int(days)} days", *TEST_PHONE_VALUES])
 
 
 def insert_alert(path: str, type_: str, message: str, campaign: str | None = None) -> int:

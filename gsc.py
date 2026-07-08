@@ -82,6 +82,47 @@ def fetch_last_7_days(site_url: str) -> list[dict]:
     return all_rows
 
 
+def fetch_totals_last_7_days(site_url: str) -> list[dict]:
+    """Totale per data (BEZ wymiaru query) — pelne kliki/impresje.
+
+    UWAGA: pobranie z wymiarem `query` (fetch_last_7_days) WYCINA zapytania
+    anonimizowane — dla actio.pl to ~95% klikow (zweryfikowane 08.07: 44 vs 2
+    kliki na tym samym oknie). KPI klikow liczyc z TEJ tabeli; wiersze
+    per-query sluza tylko do analizy fraz.
+    """
+    svc = _client()
+    end_date = date.today() - timedelta(days=GSC_LAG_DAYS)
+    start_date = end_date - timedelta(days=7)
+    resp = svc.searchanalytics().query(
+        siteUrl=site_url,
+        body={
+            "startDate": str(start_date),
+            "endDate": str(end_date),
+            "dimensions": ["date"],
+            "rowLimit": 1000,
+        },
+    ).execute()
+    return [
+        {
+            "date": r["keys"][0],
+            "site_url": site_url,
+            "impressions": int(r["impressions"]),
+            "clicks": int(r["clicks"]),
+            "ctr": float(r["ctr"]),
+            "position": float(r["position"]),
+        }
+        for r in resp.get("rows", [])
+    ]
+
+
+def fetch_all_sites_totals() -> list[dict]:
+    """Totale per data dla wszystkich property (odpowiednik fetch_all_sites_last_7_days)."""
+    rows: list[dict] = []
+    for site in list_sites():
+        rows.extend(fetch_totals_last_7_days(site["site_url"]))
+    return rows
+
+
 def fetch_all_sites_last_7_days() -> tuple[list[dict], list[str]]:
     """Ostatnie 7 dni dla wszystkich property do których SA ma dostęp.
 
