@@ -140,12 +140,10 @@ Podkampania bidująca na keywordy konkurentów (welyo/halonet/plfon/zadarma itd.
 ### Google Ads — top 20 keywords (7 dni)
 {ads_keywords_7d}
 
-### GSC — PEŁNE totale klików/impresji per dzień (7 dni, źródło prawdy dla KPI)
+### GSC — kliki/impresje per dzień (7 dni)
 {gsc_totals_7d}
 
 ### GSC — top 10 zapytań organic (7 dni)
-UWAGA: tabele per-query POMIJAJĄ zapytania anonimizowane (~95% klików actio.pl) — kliki=0 w tych
-tabelach to artefakt metody, NIE regres. KPI klików organic bierz WYŁĄCZNIE z totali powyżej.
 {gsc_queries_7d}
 
 ### GSC — top 10 stron landing (7 dni)
