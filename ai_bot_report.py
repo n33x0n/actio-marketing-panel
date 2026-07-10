@@ -1,5 +1,6 @@
-"""AI bot crawl monitor – czyta endpoint actio.pl/wp-json/actio/v1/ai-bots
-(mu-plugin actio-ai-bot-logger.php) i buduje sekcję do raportu CMO/GEO.
+"""AI bot crawl monitor – czyta lokalny SQLite (tabela ai_bot_hits, zasilana przez
+CF Pages middleware -> POST /autopost/aibot na Mikrusie; replatform z mu-plugin
+actio-ai-bot-logger.php po migracji actio.pl na Cloudflare Pages).
 
 Pozwala wydedukować: które boty AI realnie czytają actio.pl, w jakim celu
 (retrieval/cytowanie vs trening) i które strony. Korelujemy z AI Share of Voice.
@@ -9,7 +10,7 @@ from __future__ import annotations
 import json
 import os
 import pathlib
-import urllib.request
+import sqlite3
 
 BASE_DIR = pathlib.Path(__file__).resolve().parent
 
@@ -24,14 +25,51 @@ def _env(key: str, default: str | None = None) -> str | None:
         return default
 
 
-def fetch(days: int = 7) -> dict | None:
-    token = _env("ACTIO_AIBOT_TOKEN")
-    if not token:
+def _db_path() -> str | None:
+    val = os.environ.get("DB_PATH")
+    if val:
+        return val
+    try:
+        cfg = json.loads((BASE_DIR / ".mcp.json").read_text())
+        return cfg["mcpServers"]["actio-marketing"]["env"].get("DB_PATH")
+    except Exception:
         return None
-    url = f"https://actio.pl/wp-json/actio/v1/ai-bots?token={token}&days={days}"
-    req = urllib.request.Request(url, headers={"User-Agent": "actio-cmo/1.0"})
-    with urllib.request.urlopen(req, timeout=25) as r:
-        return json.loads(r.read())
+
+
+def fetch(days: int = 7) -> dict | None:
+    """Agregaty wizyt botów AI z lokalnej tabeli ai_bot_hits (ten sam kształt
+    co dawniej zwracał WP REST: total / by_bot / by_purpose / top_paths)."""
+    path = _db_path()
+    if not path:
+        return None
+    empty = {"days": days, "total": 0, "by_bot": [], "by_purpose": [], "top_paths": []}
+    try:
+        conn = sqlite3.connect(path)
+        conn.row_factory = sqlite3.Row
+    except Exception:
+        return None
+    since = f"-{int(days)} days"
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='ai_bot_hits'")
+        if not cur.fetchone():
+            return empty
+        total = cur.execute(
+            "SELECT count(*) FROM ai_bot_hits WHERE hit_time >= datetime('now', ?)", (since,)
+        ).fetchone()[0]
+        by_bot = [dict(r) for r in cur.execute(
+            "SELECT bot, purpose, count(*) hits, min(hit_time) first_seen, max(hit_time) last_seen "
+            "FROM ai_bot_hits WHERE hit_time >= datetime('now', ?) GROUP BY bot, purpose ORDER BY hits DESC", (since,))]
+        by_purpose = [dict(r) for r in cur.execute(
+            "SELECT purpose, count(*) hits FROM ai_bot_hits WHERE hit_time >= datetime('now', ?) GROUP BY purpose", (since,))]
+        top_paths = [dict(r) for r in cur.execute(
+            "SELECT path, count(*) hits FROM ai_bot_hits WHERE hit_time >= datetime('now', ?) "
+            "GROUP BY path ORDER BY hits DESC LIMIT 25", (since,))]
+        return {"days": days, "total": total, "by_bot": by_bot, "by_purpose": by_purpose, "top_paths": top_paths}
+    except Exception:
+        return empty
+    finally:
+        conn.close()
 
 
 def _purpose_line(d: dict | None) -> str:
@@ -43,8 +81,6 @@ def _purpose_line(d: dict | None) -> str:
 
 def build_section(days: int = 30) -> list[str]:
     """Sekcja: puls 7 dni + szczegoly 30 dni (tabela botow + top strony)."""
-    if not _env("ACTIO_AIBOT_TOKEN"):
-        return ["### Boty AI na actio.pl", "(brak ACTIO_AIBOT_TOKEN – pomijam)"]
     try:
         d7 = fetch(7)
         d30 = fetch(30)
@@ -53,21 +89,18 @@ def build_section(days: int = 30) -> list[str]:
 
     t7 = d7.get("total", 0) if d7 else 0
     t30 = d30.get("total", 0) if d30 else 0
-    out = ["### Boty AI czytające actio.pl", ""]
+    out = ["### Boty AI czytające actio.pl"]
     out.append(f"**Ostatnie 7 dni: {t7} wizyt** — {_purpose_line(d7)}")
-    out.append("")
     out.append(f"**Z ostatnich 30 dni: {t30} wizyt** — {_purpose_line(d30)}")
 
     if t30 == 0:
-        out.append("")
         out.append("_Brak wizyt botów AI. Jeśli się utrzyma → AI nas nie pobiera = nie ma z czego cytować._")
         return out
 
     by_bot = (d30 or {}).get("by_bot", [])
     if by_bot:
         out.append("")
-        out.append("**Wg bota (30 dni):**")
-        out.append("")
+        out.append("Wg bota (30 dni):")
         out.append("| bot | cel | wizyty | ostatnio |")
         out.append("|---|---|---:|---|")
         for r in by_bot[:12]:
@@ -75,12 +108,7 @@ def build_section(days: int = 30) -> list[str]:
     tp = (d30 or {}).get("top_paths", [])
     if tp:
         out.append("")
-        out.append("**Najczęściej czytane (30 dni):**")
-        out.append("")
-        out.append("| strona | wizyty |")
-        out.append("|---|---:|")
-        for p in tp[:8]:
-            out.append(f"| `{p['path'][:60]}` | {p['hits']} |")
+        out.append("Najczęściej czytane (30 dni): " + ", ".join(f"`{p['path'][:48]}` ({p['hits']})" for p in tp[:6]))
     return out
 
 
