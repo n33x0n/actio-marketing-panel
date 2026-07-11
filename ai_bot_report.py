@@ -89,18 +89,21 @@ def build_section(days: int = 30) -> list[str]:
 
     t7 = d7.get("total", 0) if d7 else 0
     t30 = d30.get("total", 0) if d30 else 0
-    out = ["### Boty AI czytające actio.pl"]
+    out = ["### Boty AI czytające actio.pl", ""]
     out.append(f"**Ostatnie 7 dni: {t7} wizyt** — {_purpose_line(d7)}")
+    out.append("")
     out.append(f"**Z ostatnich 30 dni: {t30} wizyt** — {_purpose_line(d30)}")
 
     if t30 == 0:
+        out.append("")
         out.append("_Brak wizyt botów AI. Jeśli się utrzyma → AI nas nie pobiera = nie ma z czego cytować._")
         return out
 
     by_bot = (d30 or {}).get("by_bot", [])
     if by_bot:
         out.append("")
-        out.append("Wg bota (30 dni):")
+        out.append("**Wg bota (30 dni):**")
+        out.append("")
         out.append("| bot | cel | wizyty | ostatnio |")
         out.append("|---|---|---:|---|")
         for r in by_bot[:12]:
@@ -108,7 +111,12 @@ def build_section(days: int = 30) -> list[str]:
     tp = (d30 or {}).get("top_paths", [])
     if tp:
         out.append("")
-        out.append("Najczęściej czytane (30 dni): " + ", ".join(f"`{p['path'][:48]}` ({p['hits']})" for p in tp[:6]))
+        out.append("**Najczęściej czytane (30 dni):**")
+        out.append("")
+        out.append("| strona | wizyty |")
+        out.append("|---|---:|")
+        for p in tp[:8]:
+            out.append(f"| `{p['path'][:60]}` | {p['hits']} |")
     return out
 
 
