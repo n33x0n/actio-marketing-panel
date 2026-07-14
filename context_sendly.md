@@ -9,7 +9,7 @@ measurement_incident_until: 2026-08-15
 
 ## Aktywne incydenty pomiaru
 - **Faza launchu (do ~2026-08-15):** GA4 sendly zbiera dane dopiero od startu serwisu (~lipiec 2026). Brak pełnego okna „poprzedni tydzień" → porównania week-over-week są puste lub oparte na niepełnym oknie. NIE oceniaj wydajności po tym oknie, NIE flaguj braku danych jako spadku.
-- **Konwersja rejestracji — do potwierdzenia:** nazwa eventu GA4 dla rejestracji konta wymaga weryfikacji w GA4/GTM sendly (tymczasowo zakładany `sign_up`). Dopóki niepotwierdzone — traktuj liczby rejestracji ostrożnie.
+- **Konwersja rejestracji NIE jest jeszcze mierzona (ważne):** utworzenie konta nie ma eventu w GA4. Dostępne, ale MYLĄCE: `form_start` = ktoś zaczął formularz (~38/28d na /pl/rejestracja/); `ads_conversion_PURCHASE_1` (54) = konwersja Google Ads odpalana na WIDOKU strony /pl/rejestracja/ (nie na sukcesie, wartość 0). NIE interpretuj tych liczb jako rejestracji. Realny event `sign_up` na ekranie sukcesu — do dodania w sendly-www.
 
 ## Stałe decyzje właściciela (nie rekomenduj wbrew nim)
 - Pozycjonowanie: „SMS API prosto od operatora, bez pośredników, pay-as-you-go, 100 SMS gratis". Nie sugeruj modelu abonamentowego ani pośredników.
