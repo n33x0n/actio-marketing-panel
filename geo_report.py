@@ -17,6 +17,8 @@ import pathlib
 import sqlite3
 from datetime import date, timedelta
 
+from brand_config import get_brand
+
 BASE_DIR = pathlib.Path(__file__).resolve().parent
 AI_REFERRERS = ("chatgpt", "openai", "perplexity", "gemini", "copilot", "claude", "grok", "x.ai")
 # Rozbudowany rozkład AI-leadów (typ konwersji + landing + strona-konwersji). Flaga = łatwy rollback.
@@ -101,10 +103,10 @@ def gsc_brand() -> list[str]:
         svc = build("searchconsole", "v1", credentials=creds, cache_discovery=False)
         end = date.today() - timedelta(days=3)
         start = end - timedelta(days=28)
-        resp = svc.searchanalytics().query(siteUrl="https://actio.pl/", body={
+        resp = svc.searchanalytics().query(siteUrl=get_brand().site_url, body={
             "startDate": str(start), "endDate": str(end), "dimensions": ["query"],
             "dimensionFilterGroups": [{"filters": [
-                {"dimension": "query", "operator": "contains", "expression": "actio"}]}],
+                {"dimension": "query", "operator": "contains", "expression": get_brand().brand_query}]}],
             "rowLimit": 10,
         }).execute()
         rows = resp.get("rows", [])
@@ -125,7 +127,7 @@ def ga4_ai_referrers() -> list[str]:
             os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = gac
         from google.analytics.data_v1beta import BetaAnalyticsDataClient
         from google.analytics.data_v1beta.types import RunReportRequest, Dimension, Metric, DateRange
-        prop = _env("GA4_PROPERTY_ID", "366851699")
+        prop = _env("GA4_PROPERTY_ID", get_brand().ga4_property_default)
         cl = BetaAnalyticsDataClient()
         req = RunReportRequest(
             property=f"properties/{prop}",

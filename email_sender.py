@@ -16,6 +16,8 @@ from email.utils import formataddr
 
 import markdown as md_lib
 
+from brand_config import get_brand
+
 
 def _load_env_from_mcp_json() -> None:
     mcp_path = pathlib.Path(__file__).parent / ".mcp.json"
@@ -42,11 +44,6 @@ def _env(name: str, default: str | None = None) -> str:
 
 def _parse_recipients(csv: str) -> list[str]:
     return [e.strip() for e in csv.split(",") if e.strip()]
-
-
-def _strip_recommendations(report_md: str) -> str:
-    """Usuń sekcję ## Rekomendacje od jej nagłówka do końca pliku."""
-    return re.sub(r"\n+##\s*Rekomendacje.*", "", report_md, flags=re.DOTALL).rstrip() + "\n"
 
 
 _CSS = """
@@ -89,7 +86,7 @@ def _render_html(date_iso: str, report_md: str, sync_status: dict, alerts: list,
     return f"""<!DOCTYPE html>
 <html lang="pl"><head><meta charset="utf-8"><style>{_CSS}</style></head>
 <body>
-<h1>Raport Actio Marketing — {date_iso}</h1>
+<h1>Raport {get_brand().name} Marketing — {date_iso}</h1>
 <div class="meta">Wygenerowany automatycznie</div>
 <div class="sync"><b>Sync status</b><ul>{sync_items}</ul></div>
 {alerts_block}
@@ -104,7 +101,7 @@ def _render_plain(date_iso: str, report_md: str, sync_status: dict, alerts: list
     if alerts:
         alerts_txt = f"\n⚠ ALERTY ({len(alerts)}):\n" + "\n".join(f"  - {a}" for a in alerts) + "\n"
     return (
-        f"Raport Actio Marketing — {date_iso}\n\n"
+        f"Raport {get_brand().name} Marketing — {date_iso}\n\n"
         f"Sync status:\n{sync}\n"
         f"{alerts_txt}\n"
         f"{report_md}\n"
@@ -114,7 +111,7 @@ def _render_plain(date_iso: str, report_md: str, sync_status: dict, alerts: list
 def _send_via_gmail(to_list: list[str], subject: str, html: str, plain: str) -> None:
     user = _env("GMAIL_USER")
     password = _env("GMAIL_APP_PASSWORD")
-    from_name = _env("GMAIL_FROM_NAME", "Marketing Bot")
+    from_name = _env("GMAIL_FROM_NAME", get_brand().from_name)
 
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject

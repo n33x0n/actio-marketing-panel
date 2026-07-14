@@ -21,6 +21,7 @@ import markdown as md_lib
 
 import db
 import email_sender
+from brand_config import get_brand
 
 
 DB_PATH = os.environ["DB_PATH"]
@@ -370,12 +371,18 @@ def render_md() -> str:
     except Exception:
         pass
 
+    brand = get_brand()
+    if brand.id == "actio":
+        conv_note = "- Wartość konwersji (`conv_value`) jest dynamiczna od 18.05: zależna od strony z której przyszedł lead (SIP Trunk 2400 zł, 3CX 3000 zł, SMS API 3600 zł, Wirtualna Centrala 3300 zł, Actio Mobile 360 zł, rejestracja konta 1500 zł, generic VoIP 1200 zł, default 900 zł)"
+    else:
+        _cv = ", ".join(f"{k} {v} {brand.currency}" for k, v in brand.conv_value.items())
+        conv_note = f"- Wartość konwersji (`conv_value`) zależna od strony z której przyszedł lead ({_cv}, default {brand.conv_value_default} {brand.currency})"
     md += f"""
 ---
 
 ## ℹ️ Notatka metodologiczna
 
-- Wartość konwersji (`conv_value`) jest dynamiczna od 18.05: zależna od strony z której przyszedł lead (SIP Trunk 2400 zł, 3CX 3000 zł, SMS API 3600 zł, Wirtualna Centrala 3300 zł, Actio Mobile 360 zł, rejestracja konta 1500 zł, generic VoIP 1200 zł, default 900 zł)
+{conv_note}
 
 """
     return md
@@ -406,7 +413,7 @@ def generate(today_iso: str | None = None) -> dict:
     md = render_md()
     inner_html = md_lib.markdown(md, extensions=["extra", "tables", "fenced_code"])
     html = _wrap_html(inner_html)
-    subject = f"[Actio Marketing Report] 📈 – {TODAY.strftime('%Y-%m-%d')}"
+    subject = f"[{get_brand().name} Marketing Report] 📈 – {TODAY.strftime('%Y-%m-%d')}"
     return {"subject": subject, "plain": md, "html": html}
 
 
@@ -415,6 +422,7 @@ if __name__ == "__main__":
     pkg = generate()
     pathlib.Path("/tmp/panel_positive_preview.html").write_text(pkg["html"], encoding="utf-8")
     print(f"Subject: {pkg['subject']}")
-    print("Sending to tlebioda@gmail.com (test override)")
-    email_sender._send_via_gmail(["tlebioda@gmail.com"], pkg["subject"], pkg["html"], pkg["plain"])
+    _test_to = os.environ["GMAIL_USER"]
+    print(f"Sending to {_test_to} (test override)")
+    email_sender._send_via_gmail([_test_to], pkg["subject"], pkg["html"], pkg["plain"])
     print("Done.")

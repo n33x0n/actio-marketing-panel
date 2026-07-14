@@ -12,6 +12,8 @@ import os
 import pathlib
 import sqlite3
 
+from brand_config import get_brand
+
 BASE_DIR = pathlib.Path(__file__).resolve().parent
 
 
@@ -81,15 +83,17 @@ def _purpose_line(d: dict | None) -> str:
 
 def build_section(days: int = 30) -> list[str]:
     """Sekcja: puls 7 dni + szczegoly 30 dni (tabela botow + top strony)."""
+    if not get_brand().ai_bot_enabled:
+        return []
     try:
         d7 = fetch(7)
         d30 = fetch(30)
     except Exception as e:
-        return ["### Boty AI na actio.pl", f"(błąd odczytu: {type(e).__name__}: {e})"]
+        return [f"### Boty AI na {get_brand().ai_bot_domain}", f"(błąd odczytu: {type(e).__name__}: {e})"]
 
     t7 = d7.get("total", 0) if d7 else 0
     t30 = d30.get("total", 0) if d30 else 0
-    out = ["### Boty AI czytające actio.pl", ""]
+    out = [f"### Boty AI czytające {get_brand().ai_bot_domain}", ""]
     out.append(f"**Ostatnie 7 dni: {t7} wizyt** — {_purpose_line(d7)}")
     out.append("")
     out.append(f"**Z ostatnich 30 dni: {t30} wizyt** — {_purpose_line(d30)}")

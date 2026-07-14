@@ -7,6 +7,8 @@ from typing import Iterator
 
 import pandas as pd
 
+from brand_config import get_brand
+
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS daily_conversions (
@@ -542,7 +544,8 @@ def fetch_lead_events_breakdown(path: str, days: int = 7, group_by: str = "lead_
     allowed = {"lead_type", "form_id", "phone_number", "link_text", "link_location", "form_location", "source_medium"}
     if group_by not in allowed:
         group_by = "lead_type"
-    placeholders = ",".join("?" for _ in TEST_PHONE_VALUES)
+    test_phones = get_brand().test_phones
+    placeholders = ",".join("?" for _ in test_phones)
     sql = f"""
         SELECT {group_by},
                SUM(event_count) AS leads,
@@ -554,7 +557,7 @@ def fetch_lead_events_breakdown(path: str, days: int = 7, group_by: str = "lead_
         ORDER BY leads DESC
     """
     with _connect(path) as conn:
-        return pd.read_sql_query(sql, conn, params=[f"-{int(days)} days", *TEST_PHONE_VALUES])
+        return pd.read_sql_query(sql, conn, params=[f"-{int(days)} days", *test_phones])
 
 
 def insert_alert(path: str, type_: str, message: str, campaign: str | None = None) -> int:

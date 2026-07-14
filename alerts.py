@@ -15,6 +15,8 @@ import os
 
 import httpx
 
+from brand_config import get_brand
+
 
 CPA_MAX_PLN = 50.0
 LOST_IS_BUDGET_MAX = 0.30
@@ -32,7 +34,7 @@ def _measurement_incident_active() -> bool:
     W oknie incydentu alerty conv-based (DRY_SPEND/CPA) to artefakty
     pomiaru — logujemy je z adnotacją, ale bez emergency pusha.
     """
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cmo_context.md")
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), get_brand().context_file)
     try:
         with open(path, encoding="utf-8") as fh:
             for line in fh:
@@ -67,6 +69,7 @@ def check_thresholds(db_path: str) -> list[dict]:
     """Zwraca listę triggered alertów. Wysyła osobne push per alert."""
     import db
 
+    brand = get_brand()
     triggered: list[dict] = []
     df = db.fetch_ads_campaigns(db_path, days=7)
     if df.empty:
@@ -82,13 +85,13 @@ def check_thresholds(db_path: str) -> list[dict]:
 
         if conv > 0:
             cpa = cost / conv
-            if cpa > CPA_MAX_PLN:
+            if cpa > brand.cpa_max:
                 triggered.append({"campaign": name, "type": "CPA", "conv_based": True,
-                                  "msg": f"{name}: CPA {cpa:.2f} zł (>{CPA_MAX_PLN} zł), {conv:.1f} konwersji / {cost:.2f} zł"})
+                                  "msg": f"{name}: CPA {cpa:.2f} {brand.currency} (>{brand.cpa_max} {brand.currency}), {conv:.1f} konwersji / {cost:.2f} {brand.currency}"})
 
         if clicks >= DRY_SPEND_MIN_CLICKS and conv == 0:
             triggered.append({"campaign": name, "type": "DRY_SPEND", "conv_based": True,
-                              "msg": f"{name}: {int(clicks)} kliknięć / {cost:.2f} zł / 0 konwersji w 7 dni"})
+                              "msg": f"{name}: {int(clicks)} kliknięć / {cost:.2f} {brand.currency} / 0 konwersji w 7 dni"})
 
     triggered.extend(_check_policy())
 
@@ -97,7 +100,7 @@ def check_thresholds(db_path: str) -> list[dict]:
         if gated:
             alert["msg"] = f"{alert['msg']} {INCIDENT_NOTE}"
         else:
-            _send_emergency(f"Actio Ads: {alert['type']}", alert["msg"])
+            _send_emergency(f"{brand.name} Ads: {alert['type']}", alert["msg"])
         try:
             db.insert_alert(db_path, alert["type"], alert["msg"], alert.get("campaign"))
         except Exception:

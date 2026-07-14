@@ -20,6 +20,8 @@ import email_sender
 import ga4
 import gsc
 
+from brand_config import get_brand
+
 
 def _load_env_from_mcp_json() -> None:
     """Fallback dla CLI — wczytaj env z .mcp.json jeśli zmienne nie są ustawione."""
@@ -45,110 +47,6 @@ def _env(name: str, default: str | None = None) -> str:
     return val
 
 
-REPORT_PROMPT = """Jesteś senior performance marketing CMO dla firmy Actio (B2B VoIP / telefonia internetowa).
-
-KRYTYCZNE: poniżej masz LIVE state konta (kampanie i negatywy bezpośrednio z API). To jest ŹRÓDŁO PRAWDY.
-Jeśli search term/keyword wygląda na śmieciowy ale jest już w aktywnych negatywach — NIE sugeruj go ponownie dodawać (to historia w 7-dniowym oknie sprzed dodania negatywu).
-Jeśli kampania jest ENABLED w live state — NIE sugeruj jej pauzowania ze względu na "powinna być wstrzymana".
-
-### LIVE state konta (źródło prawdy, {date})
-{live_account_state}
-
-Realny lead-event w GA4 to `generate_lead` (klik tel: + submit form na /kontakt/ + form na landingach inline).
-Lead source (`generate_lead`) jest poprawnie skonfigurowany.
-
-### KRYTYCZNY KONTEKST — incydenty i decyzje właściciela (źródło prawdy, aktualizowane na bieżąco)
-Poniższy dziennik NADPISUJE wnioski z danych. NIE flaguj opisanych incydentów jako nowych awarii.
-NIE dawaj rekomendacji sprzecznych ze „stałymi decyzjami właściciela" — zostały już rozważone i odrzucone/postanowione.
-Jeśli aktywny incydent pomiaru obejmuje część okna 7d, każdą liczbę konwersji z tego okna traktuj jako artefakt i zaznacz to wprost.
-
-{cmo_context}
-
-### ZASADY WNIOSKOWANIA (twarde, nie łam ich)
-- Rekomendację „zwiększ budżet" wolno dać TYLKO gdy lost_budget_pct > 10. Gdy kampania traci na rankingu (lost_rank_pct >> lost_budget_pct), dźwignią są STAWKI lub QS — nie budżet.
-- Kampanie DEMAND_GEN nie mają metryk IS/lost_rank/lost_budget (specyfika kanału) — wartości 0 to „nie dotyczy", nie problem.
-- Rekomendacje dot. QS opieraj WYŁĄCZNIE o komponenty QS z LIVE state (trafność reklamy / jakość strony docelowej / przewidywany CTR): wskazuj komponent BELOW_AVERAGE. Jeśli trafność reklamy jest ABOVE_AVERAGE, NIE sugeruj przepisywania reklam — problem leży gdzie indziej.
-- Zanim zarekomendujesz negatyw dla search terma, sprawdź w LIVE state czy identyczny/nadrzędny negatyw już istnieje ORAZ czy data search terma nie jest sprzed dodania negatywu.
-- Nie rekomenduj pauzowania/wznawiania/zmian budżetu kampanii wymienionych w „stałych decyzjach" powyżej.
-
-Mając poniższe dane, napisz **krótki raport po polsku** w formacie markdown z trzema sekcjami:
-
-## Daily digest
-1-2 zdania: co się stało ostatnio. Podaj konkretne liczby (kliknięcia, koszt, konwersje, CPA jeśli istotny).
-
-## Anomalie
-Lista 0-5 punktów. Każdy punkt: co odbiega od normy + konkretne liczby. Tylko realne anomalie — jeśli nic się nie wyróżnia, napisz "brak istotnych anomalii".
-
-**WAŻNE — klasyfikacja każdej anomalii**:
-- **Zacznij każdy punkt od emoji** — 🟢 jeśli to anomalia pozytywna (wzrost, sukces, lepszy wynik niż norma, rekord) lub 🔴 jeśli negatywna (spadek, problem, gorszy wynik, zmarnowany budżet, wysokie CPA, niski QS).
-- Nie używaj innych emoji ani znaków zastępczych. Każdy bullet musi mieć dokładnie 🟢 lub 🔴 jako pierwszy znak po `-` lub `*`.
-
-Przykłady:
-- 🟢 BRAND `actio voip` PHRASE: 4 konwersje za 5.93 zł = CPA 1.48 zł — **rekord tygodnia**.
-- 🔴 SEARCH_VOIP_PL_ALL: 8 klików / 15.76 zł / 0 konwersji — pali budżet bez efektu.
-
-## Rekomendacje
-Lista 1-5 konkretnych akcji do podjęcia DZIŚ. Każda akcja musi być jednoznaczna (np. "dodaj frazę X jako negative w kampanii Y", nie "rozważ optymalizację"). Priorytetyzuj wpływ na realne leady (`generate_lead` z Polski), nie fake metryki.
-
-NIE pisz wstępu ani podsumowania. Zacznij od `## Daily digest`. Krótko, rzeczowo, bez emoji.
-
-DANE:
-
-### GA4 — konwersje per źródło/medium (ostatnie 7 dni)
-{ga4_conversions_by_source}
-
-### GA4 — konwersje per źródło/medium (poprzedni tydzień, 8-14 dni temu, do porównania w-o-w)
-{ga4_conversions_by_source_prev}
-
-### GA4 — leady (`generate_lead`) per landing+source (7 dni)
-{ga4_leads_per_landing}
-
-### GA4 — lead_type breakdown (form vs phone, custom dims z GTM od 12.05)
-{lead_type_breakdown_7d}
-
-### GA4 — który formularz CF7 (2485=stary inline vs 123446=nowy modal global)
-{lead_form_id_breakdown_7d}
-
-### GA4 — który numer telefonu kliknięty
-{lead_phone_number_breakdown_7d}
-
-### Google Ads — kampanie (ostatnie 7 dni, kolumny is_pct/lost_budget_pct/lost_rank_pct = Lost IS %)
-{ads_campaigns_7d}
-
-### Google Ads — kampanie (poprzedni tydzień, 8-14 dni temu, do porównania w-o-w)
-{ads_campaigns_7d_prev}
-
-### Google Ads — performance assetów (sitelinks/callouts/call ext, 7 dni)
-{ads_assets_perf_7d}
-
-### Kampania SEARCH_COMPETITOR_PL — szczegóły (7 dni)
-
-Podkampania bidująca na keywordy konkurentów (welyo/halonet/plfon/zadarma itd.). Treść reklamy bez nazw konkurentów (Google policy). W raporcie omów osobno: ROI tej kampanii, jakie konkurenty generują kliki, jakie search terms wpadają (sygnał intencji rynku).
-
-**Performance kampanii:**
-{competitor_campaign_7d}
-
-**Keywordy COMPETITOR — co generuje kliki:**
-{competitor_keywords_7d}
-
-**Search terms — co realnie wpisują ludzie:**
-{competitor_search_terms_7d}
-
-### Google Ads — top 20 search terms wg kosztu (7 dni)
-{ads_search_terms_top20_7d}
-
-### Google Ads — top 20 keywords (7 dni)
-{ads_keywords_7d}
-
-### GSC — kliki/impresje per dzień (7 dni)
-{gsc_totals_7d}
-
-### GSC — top 10 zapytań organic (7 dni)
-{gsc_queries_7d}
-
-### GSC — top 10 stron landing (7 dni)
-{gsc_pages_7d}
-"""
 
 
 def run_all_syncs() -> dict[str, str]:
@@ -206,6 +104,13 @@ def run_all_syncs() -> dict[str, str]:
     except Exception as e:
         results["ads_search_terms"] = f"ERROR: {type(e).__name__}: {e}"
 
+    if get_brand().cloudflare_enabled:
+        try:
+            import cloudflare
+            results.update(cloudflare.sync_all(db_path))
+        except Exception as e:
+            results["cloudflare"] = f"ERROR: {type(e).__name__}: {e}"
+
     return results
 
 
@@ -216,7 +121,7 @@ def _load_cmo_context() -> str:
     dzięki temu raport nie rekomenduje rzeczy już odrzuconych i nie czyta
     artefaktów pomiaru jako spadków wydajności.
     """
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cmo_context.md")
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), get_brand().context_file)
     try:
         with open(path, encoding="utf-8") as fh:
             return fh.read().strip()
@@ -245,11 +150,11 @@ def collect_data_summary() -> dict[str, str]:
     lead_phone_df = db.fetch_lead_events_breakdown(db_path, days=7, group_by="phone_number")
 
     # COMPETITOR — osobna sekcja
-    competitor_camp_df = ads_df[ads_df["campaign_name"] == "SEARCH_COMPETITOR_PL"]
+    competitor_camp_df = ads_df[ads_df["campaign_name"] == get_brand().competitor_campaign]
     all_kw = db.fetch_ads_keywords(db_path, days=7)
-    competitor_kw_df = all_kw[all_kw["campaign_name"] == "SEARCH_COMPETITOR_PL"]
+    competitor_kw_df = all_kw[all_kw["campaign_name"] == get_brand().competitor_campaign]
     all_terms = db.fetch_ads_search_terms(db_path, days=7, top=200)
-    competitor_terms_df = all_terms[all_terms["campaign_name"] == "SEARCH_COMPETITOR_PL"].head(20)
+    competitor_terms_df = all_terms[all_terms["campaign_name"] == get_brand().competitor_campaign].head(20)
 
     # A: live state z Ads API (eliminuje halucynacje)
     try:
@@ -297,8 +202,8 @@ def call_openrouter(prompt: str) -> str:
         api_key=_env("OPENROUTER_API_KEY"),
         base_url="https://openrouter.ai/api/v1",
         default_headers={
-            "HTTP-Referer": "https://actio.pl",
-            "X-Title": "Actio Marketing CMO-layer",
+            "HTTP-Referer": get_brand().openrouter_referer,
+            "X-Title": get_brand().openrouter_title,
         },
         timeout=180.0,
     )
@@ -332,9 +237,9 @@ def _build_report_content(date_iso: str, report_md: str, sync_status: dict) -> s
         f"---\n"
         f"date: {date_iso}\n"
         f"type: marketing-report\n"
-        f"project: actio-marketing\n"
+        f"project: {get_brand().report_slug}\n"
         f"---\n\n"
-        f"# Raport Actio Marketing — {date_iso}\n\n"
+        f"# Raport {get_brand().name} Marketing — {date_iso}\n\n"
         f"## Sync status\n{sync_lines}\n\n"
         f"{report_md}\n"
     )
@@ -394,12 +299,12 @@ def save_to_md_reports(date_iso: str, report_md: str, sync_status: dict) -> str:
 
     full_dir = pathlib.Path(_env("MD_FULL_DIR", _env("MD_REPORTS_DIR") + "-full"))
     full_dir.mkdir(parents=True, exist_ok=True)
-    full_path = full_dir / f"{date_iso}-actio-marketing-report.md"
+    full_path = full_dir / f"{date_iso}-{get_brand().report_slug}-report.md"
     full_path.write_text(full_content, encoding="utf-8")
 
     panel_dir = pathlib.Path(_env("MD_REPORTS_DIR"))
     panel_dir.mkdir(parents=True, exist_ok=True)
-    panel_path = panel_dir / f"{date_iso}-actio-marketing-report.md"
+    panel_path = panel_dir / f"{date_iso}-{get_brand().report_slug}-report.md"
     panel_path.write_text(panel_content, encoding="utf-8")
 
     return str(full_path)
@@ -407,7 +312,7 @@ def save_to_md_reports(date_iso: str, report_md: str, sync_status: dict) -> str:
 
 def save_to_obsidian(date_iso: str, report_md: str, sync_status: dict) -> str:
     """Zapisuje raport do Obsidian vault przez obsidian CLI (tryb lokalny)."""
-    reports_path = _env("OBSIDIAN_REPORTS_PATH", "projects/actio-marketing-reports")
+    reports_path = _env("OBSIDIAN_REPORTS_PATH", get_brand().obsidian_reports_path)
     path = f"{reports_path}/{date_iso}.md"
     content = _build_report_content(date_iso, report_md, sync_status)
     subprocess.run(
@@ -491,7 +396,7 @@ def _panel_pushover_summary(report_md: str) -> str:
 def generate_report() -> dict:
     sync_status = run_all_syncs()
     data = collect_data_summary()
-    prompt = REPORT_PROMPT.format(**data)
+    prompt = get_brand().report_prompt.format(**data)
     report_md = call_openrouter(prompt)
     # Sekcja GEO / AI Share of Voice — tylko raport CMO (panel_view ja usuwa -> Hubert nie dostaje).
     try:
@@ -499,6 +404,14 @@ def generate_report() -> dict:
         report_md = report_md.rstrip() + "\n\n" + geo_report.build_report(as_section=True)
     except Exception as e:
         print(f"geo_report append error: {type(e).__name__}: {e}")
+    if get_brand().cloudflare_enabled:
+        try:
+            import cloudflare
+            _cf = cloudflare.build_section()
+            if _cf:
+                report_md = report_md.rstrip() + "\n\n" + _cf
+        except Exception as e:
+            print(f"cloudflare section error: {type(e).__name__}: {e}")
     vault_path = save_report(data["date"], report_md, sync_status)
     if os.environ.get("MD_REPORTS_DIR"):
         base = os.environ.get("CHAINLIT_BASE_URL", "").rstrip("/")
@@ -508,7 +421,7 @@ def generate_report() -> dict:
     # Push #1 — Tomek (CMO): pełna wersja Daily digest (skip jeśli PUSHOVER_USER_KEY niemożna)
     if os.environ.get("PUSHOVER_USER_KEY"):
         send_pushover(
-            title=f"Actio raport {data['date']}",
+            title=f"{get_brand().name} raport {data['date']}",
             message=_short_summary(report_md),
             url=report_url,
         )
@@ -520,7 +433,7 @@ def generate_report() -> dict:
         for uk in panel_keys:
             try:
                 send_pushover(
-                    title=f"Actio raport {data['date']}",
+                    title=f"{get_brand().name} raport {data['date']}",
                     message=panel_summary,
                     url=report_url,
                     user_key=uk,

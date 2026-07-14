@@ -1,0 +1,11 @@
+[Unit]
+Description=Sendly — Daily Report at 07:15 (Europe/Warsaw)
+
+[Timer]
+# 07:15 zamiast 07:00 (actio) — zeby oba timery nie waliy jednoczesnie w GA4/Ads/OpenRouter.
+# Jawna strefa: niezalezne od TZ hosta.
+OnCalendar=*-*-* 07:15 Europe/Warsaw
+Persistent=true
+
+[Install]
+WantedBy=timers.target

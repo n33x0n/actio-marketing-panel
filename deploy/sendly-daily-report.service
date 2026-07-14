@@ -1,0 +1,16 @@
+[Unit]
+Description=Sendly Marketing — Daily Report (sync GA4/GSC/Ads/Cloudflare + LLM analyze + email + push + alerts)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/opt/sendly-marketing-panel
+# .env musi miec CZYSTE linie KEY=value (bez inline-komentarzy — systemd wciela je do wartosci)
+EnvironmentFile=/opt/sendly-marketing-panel/.env
+Environment=BRAND=sendly
+ExecStart=/root/.local/bin/uv run python -c "import analyze; r = analyze.generate_report(); print('saved:', r['vault_path'], 'alerts:', len(r['alerts']))"
+StandardOutput=append:/opt/sendly-marketing-panel/logs/daily-report.log
+StandardError=append:/opt/sendly-marketing-panel/logs/daily-report.err.log
+TimeoutStartSec=20m

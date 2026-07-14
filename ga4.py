@@ -12,7 +12,7 @@ from google.analytics.data_v1beta.types import (
     RunReportRequest,
 )
 
-EXCLUDED_COUNTRIES = ("Singapore", "United States")
+from brand_config import get_brand
 
 
 def _iso_date(yyyymmdd: str) -> str:
@@ -45,7 +45,7 @@ def fetch_last_7_days(property_id: str) -> list[dict]:
                     FilterExpression(filter=Filter(
                         field_name="country",
                         string_filter=Filter.StringFilter(value=c),
-                    )) for c in EXCLUDED_COUNTRIES
+                    )) for c in get_brand().excluded_countries
                 ]),
             ),
         ),
@@ -90,14 +90,14 @@ def fetch_lead_events_breakdown_last_7_days(property_id: str) -> list[dict]:
             and_group=FilterExpressionList(expressions=[
                 FilterExpression(filter=Filter(
                     field_name="eventName",
-                    string_filter=Filter.StringFilter(value="generate_lead"),
+                    string_filter=Filter.StringFilter(value=get_brand().lead_event),
                 )),
                 FilterExpression(not_expression=FilterExpression(
                     or_group=FilterExpressionList(expressions=[
                         FilterExpression(filter=Filter(
                             field_name="country",
                             string_filter=Filter.StringFilter(value=c),
-                        )) for c in EXCLUDED_COUNTRIES
+                        )) for c in get_brand().excluded_countries
                     ]),
                 )),
             ]),
@@ -141,14 +141,14 @@ def fetch_landing_conversions_last_7_days(property_id: str) -> list[dict]:
             and_group=FilterExpressionList(expressions=[
                 FilterExpression(filter=Filter(
                     field_name="eventName",
-                    string_filter=Filter.StringFilter(value="generate_lead"),
+                    string_filter=Filter.StringFilter(value=get_brand().lead_event),
                 )),
                 FilterExpression(not_expression=FilterExpression(
                     or_group=FilterExpressionList(expressions=[
                         FilterExpression(filter=Filter(
                             field_name="country",
                             string_filter=Filter.StringFilter(value=c),
-                        )) for c in EXCLUDED_COUNTRIES
+                        )) for c in get_brand().excluded_countries
                     ]),
                 )),
             ]),

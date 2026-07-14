@@ -238,6 +238,9 @@ class BrandProfile:
     from_name: str
     obsidian_reports_path: str
 
+    # cloudflare (nowy konektor: AI Crawl Control + edge HTTP health)
+    cloudflare_enabled: bool
+
 
 ACTIO = BrandProfile(
     id="actio",
@@ -273,6 +276,7 @@ ACTIO = BrandProfile(
     test_phones=("0", "000000000", "48600000000", "600000000", "600100200", "48000000000"),
     from_name="Actio Marketing Reports",
     obsidian_reports_path="projects/actio-marketing-reports",
+    cloudflare_enabled=False,  # actio ma wlasny ai_bot_hits (CF middleware) — nie dublujemy
 )
 
 
@@ -304,6 +308,7 @@ SENDLY = BrandProfile(
     test_phones=(),          # numery testowe sendly nieznane
     from_name="Sendly Marketing Reports",
     obsidian_reports_path="projects/sendly-marketing-reports",
+    cloudflare_enabled=True,  # sendly.link jest na CF — AI Crawl Control + edge HTTP health przez API
 )
 
 
