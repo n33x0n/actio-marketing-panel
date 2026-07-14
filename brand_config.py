@@ -257,7 +257,7 @@ ACTIO = BrandProfile(
     competitor_campaign="SEARCH_COMPETITOR_PL",
     site_url="https://actio.pl/",
     brand_query="actio",
-    gsc_site_filter=None,  # actio: bez filtra (dotychczasowe zachowanie — wszystkie property SA)
+    gsc_site_filter=("https://actio.pl/",),  # tylko actio.pl (SA widzi tez sendly.link po dodaniu — izolacja)
     conv_value={
         # z panel_positive_report.py (notatka metodologiczna, dynamiczne od 18.05)
         "sip trunk": 2400,
