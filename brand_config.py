@@ -218,6 +218,7 @@ class BrandProfile:
     site_url: str                 # gsc_brand siteUrl, np. "https://actio.pl/"
     brand_query: str              # filtr brandowy w GSC, np. "actio"
     gsc_site_filter: tuple[str, ...] | None  # None = wszystkie property SA; allowlist = izolacja marki
+    gsc_property: str  # siteUrl dla gsc_brand: URL-prefix ("https://x/") lub domain ("sc-domain:x")
 
     # raport CEO (panel_positive_report) — wartosci konwersji per produkt
     conv_value: dict              # mapa fragment-nazwy -> wartosc PLN  (WERYFIKOWANE przy wiringu)
@@ -258,6 +259,7 @@ ACTIO = BrandProfile(
     site_url="https://actio.pl/",
     brand_query="actio",
     gsc_site_filter=("https://actio.pl/",),  # tylko actio.pl (SA widzi tez sendly.link po dodaniu — izolacja)
+    gsc_property="https://actio.pl/",
     conv_value={
         # z panel_positive_report.py (notatka metodologiczna, dynamiczne od 18.05)
         "sip trunk": 2400,
@@ -296,6 +298,7 @@ SENDLY = BrandProfile(
     site_url="https://sendly.link/",
     brand_query="sendly",
     gsc_site_filter=("https://sendly.link/", "sc-domain:sendly.link"),  # izolacja od actio.pl
+    gsc_property="sc-domain:sendly.link",  # SA ma property typu Domain, nie URL-prefix
     conv_value={
         # TODO(biznes): wartosc rejestracji SENDLY do ustalenia z Tomem/Hubertem.
         "rejestracja": 0,

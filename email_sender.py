@@ -136,7 +136,7 @@ def send_report_email(date_iso: str, report_md: str, sync_status: dict,
     ceo = _parse_recipients(os.environ.get("REPORT_RECIPIENTS_CEO", ""))
 
     alert_marker = f" — ⚠ {len(alerts)} alertów" if alerts else ""
-    subject = f"[Actio Marketing] Raport {date_iso}{alert_marker}"
+    subject = f"[{get_brand().name} Marketing] Raport {date_iso}{alert_marker}"
 
     result = {"cmo": {"sent_to": [], "errors": []},
               "ceo": {"sent_to": [], "errors": []}}

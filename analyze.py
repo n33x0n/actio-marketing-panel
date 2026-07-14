@@ -404,14 +404,6 @@ def generate_report() -> dict:
         report_md = report_md.rstrip() + "\n\n" + geo_report.build_report(as_section=True)
     except Exception as e:
         print(f"geo_report append error: {type(e).__name__}: {e}")
-    if get_brand().cloudflare_enabled:
-        try:
-            import cloudflare
-            _cf = cloudflare.build_section()
-            if _cf:
-                report_md = report_md.rstrip() + "\n\n" + _cf
-        except Exception as e:
-            print(f"cloudflare section error: {type(e).__name__}: {e}")
     vault_path = save_report(data["date"], report_md, sync_status)
     if os.environ.get("MD_REPORTS_DIR"):
         base = os.environ.get("CHAINLIT_BASE_URL", "").rstrip("/")

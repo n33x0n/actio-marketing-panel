@@ -49,10 +49,13 @@ def _sov(rows: list[dict]) -> float:
 
 
 def geo_section(conn: sqlite3.Connection) -> list[str]:
-    dates = [r[0] for r in conn.execute(
-        "SELECT DISTINCT run_date FROM geo_visibility ORDER BY run_date DESC").fetchall()]
+    try:
+        dates = [r[0] for r in conn.execute(
+            "SELECT DISTINCT run_date FROM geo_visibility ORDER BY run_date DESC").fetchall()]
+    except sqlite3.OperationalError:
+        return ["_AI Share of Voice: brak pomiaru dla tej marki (uruchom geo_monitor)._"]
     if not dates:
-        return ["(brak danych geo_visibility – uruchom geo_monitor.py)"]
+        return ["_AI Share of Voice: brak danych (uruchom geo_monitor)._"]
     latest = _load_run(conn, dates[0])
     prev = _load_run(conn, dates[1]) if len(dates) > 1 else []
     out = []
@@ -103,7 +106,7 @@ def gsc_brand() -> list[str]:
         svc = build("searchconsole", "v1", credentials=creds, cache_discovery=False)
         end = date.today() - timedelta(days=3)
         start = end - timedelta(days=28)
-        resp = svc.searchanalytics().query(siteUrl=get_brand().site_url, body={
+        resp = svc.searchanalytics().query(siteUrl=get_brand().gsc_property, body={
             "startDate": str(start), "endDate": str(end), "dimensions": ["query"],
             "dimensionFilterGroups": [{"filters": [
                 {"dimension": "query", "operator": "contains", "expression": get_brand().brand_query}]}],
@@ -114,7 +117,7 @@ def gsc_brand() -> list[str]:
         for r in rows[:6]:
             out.append(f"  - '{r['keys'][0]}': poz {r['position']:.1f}, impr {int(r['impressions'])}, klik {int(r['clicks'])}")
         if not rows:
-            out.append("  (brak fraz z 'actio')")
+            out.append(f"  (brak fraz z '{get_brand().brand_query}')")
         return out
     except Exception as e:
         return [f"GSC brand: blad ({type(e).__name__}: {e})"]
@@ -151,7 +154,7 @@ def ga4_ai_referrers() -> list[str]:
             date_ranges=[DateRange(start_date="30daysAgo", end_date="today")],
             dimension_filter=FilterExpression(filter=Filter(
                 field_name="eventName",
-                string_filter=Filter.StringFilter(value="generate_lead"),
+                string_filter=Filter.StringFilter(value=get_brand().lead_event),
             )),
         )
         leads: dict[str, int] = {}
@@ -172,7 +175,7 @@ def ga4_ai_referrers() -> list[str]:
         conv_page: dict[str, dict[str, int]] = {}  # src -> {path: generate_lead}
         if AI_LEADS_DETAIL:
             lead_filter = FilterExpression(filter=Filter(
-                field_name="eventName", string_filter=Filter.StringFilter(value="generate_lead")))
+                field_name="eventName", string_filter=Filter.StringFilter(value=get_brand().lead_event)))
 
             def _agg(target, dim, metric, flt=None):
                 try:
@@ -202,7 +205,7 @@ def ga4_ai_referrers() -> list[str]:
 
         types = ("phone", "registration", "form")
         header = "| zrodlo | sesje | leady | telefon | rejestracja | formularz |" if AI_LEADS_DETAIL and by_type \
-            else "| zrodlo | sesje | leady (generate_lead) |"
+            else f"| zrodlo | sesje | leady ({get_brand().lead_event}) |"
         sep = "|---|---:|---:|---:|---:|---:|" if AI_LEADS_DETAIL and by_type else "|---|---:|---:|"
         out += [header, sep]
         tot_t = {t: 0 for t in types}
@@ -243,6 +246,23 @@ def ga4_ai_referrers() -> list[str]:
         return [f"GA4 AI-referrers: blad ({type(e).__name__}: {e})"]
 
 
+def ai_bots_section() -> list[str]:
+    """Boty AI czytajace serwis: marki na Cloudflare -> CF Analytics (cloudflare.py);
+    inaczej -> ai_bot_hits (ai_bot_report)."""
+    if get_brand().cloudflare_enabled:
+        try:
+            import cloudflare
+            sec = cloudflare.build_section()
+            return sec.splitlines() if sec else []
+        except Exception as e:
+            return [f"Boty AI (CF): blad ({type(e).__name__})"]
+    try:
+        import ai_bot_report
+        return ai_bot_report.build_section()
+    except Exception as e:
+        return [f"Boty AI: blad ({type(e).__name__})"]
+
+
 def build_report(as_section: bool = False) -> str:
     """as_section=True -> naglowek H2 do wklejenia w wiekszy raport (mail CMO);
     False -> samodzielny raport z H1 (uruchomienie z CLI)."""
@@ -252,11 +272,7 @@ def build_report(as_section: bool = False) -> str:
     parts = [header, ""]
     parts += geo_section(conn)
     conn.close()
-    try:
-        import ai_bot_report
-        parts += [""] + ai_bot_report.build_section()
-    except Exception as e:
-        parts += ["", f"Boty AI: blad ({type(e).__name__})"]
+    parts += [""] + ai_bots_section()
     parts += [""] + gsc_brand()
     parts += [""] + ga4_ai_referrers()
     return "\n".join(parts)

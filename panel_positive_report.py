@@ -251,7 +251,7 @@ def render_md() -> str:
     period_a_str = f"{PERIOD_A_START.strftime('%d.%m')}-{PERIOD_A_END.strftime('%d.%m')}"
     period_b_str = f"{PERIOD_B_START.strftime('%d.%m')}-{PERIOD_B_END.strftime('%d.%m')}"
 
-    md = f"""# 📈 Actio Marketing – Trendy i Wzrosty
+    md = f"""# 📈 {get_brand().name} Marketing – Trendy i Wzrosty
 
 **Sliding window porównanie**: poprzednie {PERIOD_LENGTH} dni ({period_a_str}) ▶️ ostatnie {PERIOD_LENGTH} dni ({period_b_str})
 
@@ -346,7 +346,7 @@ def render_md() -> str:
 |---|---|---:|---:|---:|
 """
     for i, p in enumerate(top_pages, 1):
-        short = p["page"].replace("https://actio.pl", "") or "/"
+        short = p["page"].replace(get_brand().site_url.rstrip("/"), "") or "/"
         md += f"| {i} | `{short}` | {fmt(p['imp'])} | {fmt(p['clk'])} | {p['avg_pos']:.1f} |\n"
 
     # Widoczność w chatbotach AI (GEO) – ta sama macierz co w raporcie CMO
@@ -355,12 +355,10 @@ def render_md() -> str:
         with sqlite3.connect(DB_PATH) as _gc:
             _geo = geo_report.geo_section(_gc)
         md += ("\n---\n\n## 🤖 Widoczność w chatbotach AI (GEO)\n\n"
-               "_Na jakich asystentach AI (ChatGPT, Claude, Gemini, Grok, Perplexity) pojawia się Actio "
-               "przy zapytaniach kupujących VoIP. Pomiar dwutygodniowy._\n\n"
+               f"_Czy {get_brand().name} pojawia się w odpowiedziach asystentów AI. Pomiar dwutygodniowy._\n\n"
                + "\n".join(_geo) + "\n")
         try:
-            import ai_bot_report
-            md += "\n" + "\n".join(ai_bot_report.build_section()) + "\n"
+            md += "\n" + "\n".join(geo_report.ai_bots_section()) + "\n"
         except Exception:
             pass
         # Ruch i leady z czatbotow AI (GA4) – ta sama tabela sesje+leady co w raporcie CMO
