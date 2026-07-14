@@ -72,6 +72,8 @@ def fetch_lead_events_breakdown_last_7_days(property_id: str) -> list[dict]:
     działają dopiero OD MOMENTU REJESTRACJI — starsze eventy nie mają tych wartości
     (zostaną zwrócone jako "(not set)").
     """
+    if not get_brand().lead_dimensions:
+        return []  # marka bez zarejestrowanych custom dims (np. sendly) — pomijamy breakdown
     client = BetaAnalyticsDataClient()
     request = RunReportRequest(
         property=f"properties/{property_id}",

@@ -208,6 +208,7 @@ class BrandProfile:
     # GA4
     excluded_countries: tuple[str, ...]
     lead_event: str
+    lead_dimensions: tuple[str, ...]  # custom dims GTM do breakdownu leadow; () = pomin (nie zarejestrowane)
     ga4_property_default: str     # default dla geo_report gdy env pusty
 
     # Ads
@@ -259,6 +260,7 @@ ACTIO = BrandProfile(
     context_file="cmo_context.md",
     excluded_countries=("Singapore", "United States"),
     lead_event="generate_lead",
+    lead_dimensions=("lead_type", "form_id", "form_location", "phone_number", "link_location"),
     ga4_property_default="366851699",
     ads_enabled=True,
     competitor_campaign="SEARCH_COMPETITOR_PL",
@@ -323,7 +325,8 @@ SENDLY = BrandProfile(
     openrouter_title="Sendly Marketing CMO-layer",
     context_file="context_sendly.md",
     excluded_countries=("Singapore", "United States"),
-    lead_event="sign_up",  # TODO(dostepy): potwierdzic realny event rejestracji w GA4 sendly
+    lead_event="sign_up",  # event rejestracji (odpalany z sendly-www v1.4.69)
+    lead_dimensions=(),  # do rejestracji w GA4: language, registration_type (Todoist) -> na razie pomijamy
     ga4_property_default="",  # z env GA4_PROPERTY_ID (brak sensownego defaultu)
     ads_enabled=True,        # konto SYNTELL S.A. 255-647-3852 (spolka matka)
     competitor_campaign=None,  # sendly nie ma jeszcze kampanii konkurencyjnej
