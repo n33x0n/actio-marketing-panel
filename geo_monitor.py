@@ -19,6 +19,8 @@ from datetime import date, datetime, timezone
 
 import httpx
 
+from brand_config import get_brand
+
 BASE_DIR = pathlib.Path(__file__).resolve().parent
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
@@ -97,13 +99,13 @@ def ask(model: str, query: str, api_key: str) -> str:
         OPENROUTER_URL,
         headers={
             "Authorization": f"Bearer {api_key}",
-            "HTTP-Referer": "https://actio.pl",
-            "X-Title": "Actio GEO Monitor",
+            "HTTP-Referer": get_brand().openrouter_referer,
+            "X-Title": f"{get_brand().name} GEO Monitor",
         },
         json={
             "model": model,
             "messages": [
-                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "system", "content": get_brand().geo_system_prompt},
                 {"role": "user", "content": query},
             ],
             "temperature": 0,
@@ -116,25 +118,27 @@ def ask(model: str, query: str, api_key: str) -> str:
 
 
 def analyze(text: str) -> dict:
-    """Wykryj marki + pozycje Actio wsrod wymienionych marek."""
+    """Wykryj marki + pozycje marki docelowej wsrod wymienionych (kolumny actio_* = target)."""
+    b = get_brand()
+    target = b.geo_target
     low = text.lower()
     hits = []  # (idx, brand)
-    for brand, pat in BRANDS.items():
+    for brand, pat in b.geo_brands.items():
         m = re.search(pat, low)
         if m:
             hits.append((m.start(), brand))
     hits.sort()
-    ordered = [b for _, b in hits]
-    actio = "Actio" in ordered
-    rank = ordered.index("Actio") + 1 if actio else None
-    competitors = [b for b in ordered if b != "Actio"]
-    # snippet ze zdaniem o Actio
+    ordered = [x for _, x in hits]
+    found = target in ordered
+    rank = ordered.index(target) + 1 if found else None
+    competitors = [x for x in ordered if x != target]
+    # snippet ze zdaniem o marce docelowej
     snippet = ""
-    if actio:
-        mm = re.search(r"[^.\n]*\bactio\b[^.\n]*", text, re.I)
+    if found:
+        mm = re.search(rf"[^.\n]*(?:{b.geo_brands[target]})[^.\n]*", text, re.I)
         snippet = (mm.group(0).strip() if mm else text[:200])[:300]
     return {
-        "actio_mentioned": actio,
+        "actio_mentioned": found,
         "actio_rank": rank,
         "brands_ordered": ordered,
         "competitors": competitors,
@@ -174,12 +178,13 @@ def run(run_date: str | None = None) -> dict:
     run_ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
     conn = _db(db_path)
     engines = _engines()
+    queries = get_brand().geo_queries
 
     rows = []
     comp_counter: dict[str, int] = {}
     per_engine: dict[str, list[bool]] = {e["label"]: [] for e in engines}
 
-    for q in QUERIES:
+    for q in queries:
         for e in engines:
             rec = {"query": q, "engine": e["label"], "model": e["model"], "error": None}
             try:
@@ -213,7 +218,7 @@ def run(run_date: str | None = None) -> dict:
         "run_date": run_date,
         "rows": rows,
         "kpi_share_of_voice": round(actio_hits / total, 3) if total else 0,
-        "actio_in_queries": f"{unique_q}/{len(QUERIES)}",
+        "actio_in_queries": f"{unique_q}/{len(queries)}",
         "per_engine": {k: f"{sum(v)}/{len(v)}" for k, v in per_engine.items()},
         "top_competitors": sorted(comp_counter.items(), key=lambda x: -x[1])[:8],
         "db_path": db_path,

@@ -242,6 +242,12 @@ class BrandProfile:
     # cloudflare (nowy konektor: AI Crawl Control + edge HTTP health)
     cloudflare_enabled: bool
 
+    # geo_monitor (AI Share of Voice — odpytywanie silnikow AI)
+    geo_queries: tuple[str, ...]
+    geo_brands: dict          # nazwa -> regex (marka docelowa + konkurenci)
+    geo_target: str           # klucz marki docelowej w geo_brands
+    geo_system_prompt: str
+
 
 ACTIO = BrandProfile(
     id="actio",
@@ -279,6 +285,32 @@ ACTIO = BrandProfile(
     from_name="Actio Marketing Reports",
     obsidian_reports_path="projects/actio-marketing-reports",
     cloudflare_enabled=False,  # actio ma wlasny ai_bot_hits (CF middleware) — nie dublujemy
+    geo_queries=(
+        "najlepszy operator VoIP dla firm w Polsce",
+        "VoIP dla firm ktory operator wybrac",
+        "ranking operatorow VoIP dla firm 2026",
+        "operator VoIP B2B Polska",
+        "ranking wirtualnych central telefonicznych dla firm 2026",
+        "porownanie SIP trunk dla firm w Polsce",
+        "3CX wdrozenie Polska partner",
+        "ranking dostawcow SMS API w Polsce",
+        "wirtualny numer komorkowy VoIP dla firm",
+    ),
+    geo_brands={
+        "Actio": r"\bactio\b", "EasyCall": r"\beasy ?call\b", "FCN": r"\bfcn\b",
+        "Zadarma": r"\bzadarma\b", "Welyo": r"\bwelyo\b", "Halonet": r"\bhalo ?net\b",
+        "PLFON": r"\bplfon\b|peoplefone", "Platan": r"\bplatan\b", "Telestrada": r"\btelestrada\b",
+        "Spikon": r"\bspikon\b", "Ringostat": r"\bringostat\b", "SuperVoIP": r"\bsupervoip\b",
+        "TeleCube": r"\btelecube\b", "Systell": r"\bsystell\b", "Fonet": r"\bfonet\b",
+        "Aiton Caldwell": r"aiton\s*caldwell", "VoIPStudio": r"\bvoip ?studio\b",
+        "Orange": r"\borange\b", "smsapi": r"\bsmsapi\b",
+    },
+    geo_target="Actio",
+    geo_system_prompt=(
+        "Jestes asystentem doradzajacym polskim firmom wybor dostawcy uslug telekomunikacyjnych/VoIP. "
+        "Odpowiadaj po polsku, rzeczowo, i wymieniaj KONKRETNYCH dostawcow/operatorow z nazwy. "
+        "Maksymalnie kilka zdan."
+    ),
 )
 
 
@@ -312,6 +344,30 @@ SENDLY = BrandProfile(
     from_name="Sendly Marketing Reports",
     obsidian_reports_path="projects/sendly-marketing-reports",
     cloudflare_enabled=True,  # sendly.link jest na CF — AI Crawl Control + edge HTTP health przez API
+    geo_queries=(
+        "najlepsze SMS API dla firm w Polsce",
+        "ranking dostawcow SMS API w Polsce 2026",
+        "tanie SMS API do wysylki SMS dla firm",
+        "SMS API od operatora telekomunikacyjnego w Polsce",
+        "bramka SMS API dla programistow",
+        "masowa wysylka SMS przez API dla firm",
+        "SMS API do powiadomien i kodow 2FA",
+        "porownanie dostawcow SMS API w Polsce",
+        "integracja SMS API z WooCommerce sklep",
+    ),
+    geo_brands={
+        "Sendly": r"\bsendly\b", "SMSAPI": r"\bsmsapi(?:\.pl)?\b", "SerwerSMS": r"serwer\s?sms",
+        "SMSlabs": r"\bsmslabs\b", "mProfi": r"\bmprofi\b", "ProSMS": r"\bprosms\b",
+        "GudMobi": r"\bgudmobi\b", "SMSCenter": r"\bsmscenter\b", "Twilio": r"\btwilio\b",
+        "Vonage": r"\bvonage\b", "Infobip": r"\binfobip\b",
+        "MessageBird": r"\bmessagebird\b|\bbird\.com\b", "LOX24": r"\blox24\b",
+    },
+    geo_target="Sendly",
+    geo_system_prompt=(
+        "Jestes asystentem doradzajacym polskim firmom wybor dostawcy SMS API / bramki SMS do wysylki wiadomosci. "
+        "Odpowiadaj po polsku, rzeczowo, i wymieniaj KONKRETNYCH dostawcow z nazwy. "
+        "Maksymalnie kilka zdan."
+    ),
 )
 
 

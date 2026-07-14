@@ -1,0 +1,15 @@
+[Unit]
+Description=Sendly — GEO / AI Share of Voice monitor (odpytuje silniki AI)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/opt/sendly-marketing-panel
+EnvironmentFile=/opt/sendly-marketing-panel/.env
+Environment=BRAND=sendly
+ExecStart=/root/.local/bin/uv run python geo_monitor.py
+StandardOutput=append:/opt/sendly-marketing-panel/logs/geo-monitor.log
+StandardError=append:/opt/sendly-marketing-panel/logs/geo-monitor.err.log
+TimeoutStartSec=30m
