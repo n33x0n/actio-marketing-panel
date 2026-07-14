@@ -6,6 +6,8 @@ from datetime import date, timedelta
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
+from brand_config import get_brand
+
 
 SCOPES = ["https://www.googleapis.com/auth/webmasters.readonly"]
 GSC_LAG_DAYS = 3  # GSC dane nie są stabilne dla ostatnich 2-3 dni
@@ -34,6 +36,19 @@ def list_sites() -> list[dict]:
         {"site_url": s["siteUrl"], "permission": s["permissionLevel"]}
         for s in resp.get("siteEntry", [])
     ]
+
+
+def _brand_sites() -> list[dict]:
+    """list_sites() zawezone do property marki (brand.gsc_site_filter).
+
+    Actio ma gsc_site_filter=None -> wszystkie property (bez zmiany zachowania).
+    Sendly ma allowliste (sc-domain:sendly.link) -> izolacja od actio.pl w tej samej bazie.
+    """
+    sites = list_sites()
+    allow = get_brand().gsc_site_filter
+    if allow:
+        sites = [s for s in sites if s["site_url"] in allow]
+    return sites
 
 
 def fetch_last_7_days(site_url: str) -> list[dict]:
@@ -118,7 +133,7 @@ def fetch_totals_last_7_days(site_url: str) -> list[dict]:
 def fetch_all_sites_totals() -> list[dict]:
     """Totale per data dla wszystkich property (odpowiednik fetch_all_sites_last_7_days)."""
     rows: list[dict] = []
-    for site in list_sites():
+    for site in _brand_sites():
         rows.extend(fetch_totals_last_7_days(site["site_url"]))
     return rows
 
@@ -130,7 +145,7 @@ def fetch_all_sites_last_7_days() -> tuple[list[dict], list[str]]:
         (rows, sites) — wiersze gotowe dla db.upsert_gsc_rows + lista
         przepytanych site_url.
     """
-    sites = list_sites()
+    sites = _brand_sites()
     all_rows: list[dict] = []
     processed: list[str] = []
 
