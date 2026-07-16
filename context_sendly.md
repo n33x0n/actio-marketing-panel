@@ -25,6 +25,7 @@ measurement_incident_until: 2026-08-15
 - (do uzupełnienia po pierwszych tygodniach danych)
 
 ## Dziennik zmian na koncie (najnowsze u góry)
+- 2026-07-16 — Stawki CPC podniesione (decyzja Toma): grupa "1. SMS API / Bramka SMS" 3→6 zł, pozostałe 4 grupy 3→4,50 zł. Powód: lostRank 44–90% przy 3 zł, 0 kliknięć/7dni. Oceniaj efekt od 17.07; jeśli lostRank nadal >40% po 2–3 dniach, rekomenduj kolejną korektę.
 - 2026-07-16 — Konwersje Ads włączone przez API: `sign_up` (GŁÓWNA, SIGNUP) + `generate_lead` (dodatkowa). Raport od teraz może oceniać kampanię po sign_up (dane od 15.07). lead_dimensions=(language, registration_type) włączone w raporcie.
 - 2026-07-15 — Kampania "SENDLY | Search PL | SMS API" (24033405542) utworzona (Manual CPC 3 zł, 100 zł/dz, PAUSED) i odpauzowana przez Toma. Uruchomiony serwer MCP (mcp.sendly.link) + hub dokumentacji (/dokumentacja: SMS API / API Reference / MCP) + artykuł blog o MCP.
 - 2026-07-14 — Uruchomienie pipeline raportowego SENDLY (profil marki na wspólnym kodzie z Actio). Start: mail + push do Tomka; Hubert dołączony później na sygnał.
