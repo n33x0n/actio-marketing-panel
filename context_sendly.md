@@ -16,6 +16,7 @@ measurement_incident_until: 2026-08-15
 - Pozycjonowanie: „SMS API prosto od operatora, bez pośredników, pay-as-you-go, 100 SMS gratis". Nie sugeruj modelu abonamentowego ani pośredników.
 - Produkt 2FA/OTP jest świadomie ukryty (nie ma go w API) — nie rekomenduj promocji tej strony.
 - Google Ads sendly działa na koncie SYNTELL S.A. (255-647-3852, spółka matka Sendly i Actio).
+- **Conquesting brandów konkurencji jest ŚWIADOMY:** „sms api"/„smsapi" to główna fraza docelowa — NIE rekomenduj dodania `smsapi` jako negatyw (decyzja Toma 17.07). `serwersms` zanegatywowany. Jeśli koszt na „smsapi" rośnie bez konwersji, rekomenduj osobną grupę conquesting z kreacją „SMS API prosto od operatora, bez pośredników", a nie wykluczenie frazy.
 
 ## Fakty zweryfikowane (nie flaguj ponownie)
 - Prepaid: konto może wydać maksymalnie tyle, ile ma salda — brak nieograniczonego długu (to cecha, nie problem).
@@ -26,6 +27,7 @@ measurement_incident_until: 2026-08-15
 
 ## Dziennik zmian na koncie (najnowsze u góry)
 - 2026-07-16 — Stawki CPC podniesione (decyzja Toma): grupa "1. SMS API / Bramka SMS" 3→6 zł, pozostałe 4 grupy 3→4,50 zł. Powód: lostRank 44–90% przy 3 zł, 0 kliknięć/7dni. Oceniaj efekt od 17.07; jeśli lostRank nadal >40% po 2–3 dniach, rekomenduj kolejną korektę.
-- 2026-07-16 — Konwersje Ads włączone przez API: `sign_up` (GŁÓWNA, SIGNUP) + `generate_lead` (dodatkowa). Raport od teraz może oceniać kampanię po sign_up (dane od 15.07). lead_dimensions=(language, registration_type) włączone w raporcie.
+- 2026-07-17 — `serwersms` [PHRASE] dodany jako negatyw kampanii (decyzja Toma). `smsapi` NIE negatywowany — conquesting świadomy. `lead_dimensions` sendly cofnięte do `()` — breakdown leadów jest zahardkodowany na schemat ACTIO (form_id/phone_number/link_location); dla sendly rzucał 400. Licznik `sign_up` działa z osobnego syncu, więc raport nic nie traci.
+- 2026-07-16 — Konwersje Ads włączone przez API: `sign_up` (GŁÓWNA, SIGNUP) + `generate_lead` (dodatkowa). Raport od teraz może oceniać kampanię po sign_up (dane od 15.07).
 - 2026-07-15 — Kampania "SENDLY | Search PL | SMS API" (24033405542) utworzona (Manual CPC 3 zł, 100 zł/dz, PAUSED) i odpauzowana przez Toma. Uruchomiony serwer MCP (mcp.sendly.link) + hub dokumentacji (/dokumentacja: SMS API / API Reference / MCP) + artykuł blog o MCP.
 - 2026-07-14 — Uruchomienie pipeline raportowego SENDLY (profil marki na wspólnym kodzie z Actio). Start: mail + push do Tomka; Hubert dołączony później na sygnał.
