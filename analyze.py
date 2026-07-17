@@ -172,6 +172,16 @@ def collect_data_summary() -> dict[str, str]:
     def _md(df) -> str:
         return df.to_markdown(index=False) if not df.empty else "(brak danych)"
 
+    # SEO okazje (content-refresh / zly jezyk) — klucz uzywany tylko w report_prompt CMO
+    try:
+        seo_opps = gsc.fetch_seo_opportunities(get_brand().gsc_property, days=28)
+        seo_opps_md = (
+            pd.DataFrame(seo_opps).to_markdown(index=False)
+            if seo_opps else "(brak — wszystkie widoczne strony maja kliki)"
+        )
+    except Exception as e:
+        seo_opps_md = f"(blad: {type(e).__name__}: {e})"
+
     return {
         "date": datetime.date.today().isoformat(),
         "cmo_context": _load_cmo_context(),
@@ -193,6 +203,7 @@ def collect_data_summary() -> dict[str, str]:
         "lead_type_breakdown_7d": _md(lead_type_df),
         "lead_form_id_breakdown_7d": _md(lead_form_id_df),
         "lead_phone_number_breakdown_7d": _md(lead_phone_df),
+        "seo_opportunities": seo_opps_md,
     }
 
 

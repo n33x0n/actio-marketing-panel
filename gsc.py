@@ -97,6 +97,81 @@ def fetch_last_7_days(site_url: str) -> list[dict]:
     return all_rows
 
 
+def fetch_seo_opportunities(
+    site_url: str, days: int = 28, min_impressions: int = 25, top: int = 12
+) -> list[dict]:
+    """Strony z widocznością (impresje) ale ~0 klików — kandydaci do poprawy.
+
+    Operacjonalizuje content-refresh: znajdź strony które już rankują, ale nie
+    dowożą klików. Dodatkowo wykrywa jezykowy mismatch (polska fraza serwowana
+    pod /en//de//ua/) — to najczęstsza przyczyna 0% CTR na świeżej domenie.
+    """
+    import re
+
+    svc = _client()
+    end_date = date.today() - timedelta(days=GSC_LAG_DAYS)
+    start_date = end_date - timedelta(days=days)
+    resp = svc.searchanalytics().query(
+        siteUrl=site_url,
+        body={
+            "startDate": str(start_date),
+            "endDate": str(end_date),
+            "dimensions": ["page", "query"],
+            "rowLimit": 5000,
+        },
+    ).execute()
+    rows = resp.get("rows", [])
+
+    PL_DIA = set("ąćęłńóśźżĄĆĘŁŃÓŚŹŻ")
+    PL_WORDS = {
+        "cennik", "kosztuje", "wysyłka", "wysylka", "ile", "dla", "polsce", "polska",
+        "najlepsze", "tanie", "bramka", "powiadomienia", "urząd", "urzędu", "urzędów",
+        "gmina", "gminy", "jak", "cena", "ceny", "porównanie", "masowa",
+    }
+
+    def looks_polish(q: str) -> bool:
+        if any(ch in PL_DIA for ch in q):
+            return True
+        toks = set(re.findall(r"[a-ząćęłńóśźż]+", q.lower()))
+        return bool(toks & PL_WORDS)
+
+    def lang_of(page: str) -> str:
+        m = re.search(r"^https?://[^/]+/([a-z]{2})/", page)
+        return m.group(1) if m else "?"
+
+    pages: dict[str, dict] = {}
+    for r in rows:
+        page, query = r["keys"]
+        imp, clk, pos = int(r["impressions"]), int(r["clicks"]), float(r["position"])
+        p = pages.setdefault(page, {"imp": 0, "clk": 0, "pos_w": 0.0, "tq": "", "tq_imp": 0})
+        p["imp"] += imp
+        p["clk"] += clk
+        p["pos_w"] += pos * imp
+        if imp > p["tq_imp"]:
+            p["tq_imp"], p["tq"] = imp, query
+
+    out: list[dict] = []
+    for page, p in pages.items():
+        if p["imp"] < min_impressions:
+            continue
+        ctr = p["clk"] / max(p["imp"], 1)
+        if ctr > 0.005:  # ma realne kliki -> nie "0 klików"
+            continue
+        lang = lang_of(page)
+        mismatch = lang in ("en", "de", "ua") and looks_polish(p["tq"])
+        out.append({
+            "strona": re.sub(r"^https?://[^/]+", "", page),
+            "jezyk": lang,
+            "impresje": p["imp"],
+            "klik": p["clk"],
+            "poz": round(p["pos_w"] / max(p["imp"], 1), 1),
+            "top_zapytanie": p["tq"],
+            "flaga": f"ZLY JEZYK (PL fraza na /{lang}/)" if mismatch else ("0 klikow" if p["clk"] == 0 else "niski CTR"),
+        })
+    out.sort(key=lambda x: (0 if "ZLY JEZYK" in x["flaga"] else 1, -x["impresje"]))
+    return out[:top]
+
+
 def fetch_totals_last_7_days(site_url: str) -> list[dict]:
     """Totale per data (BEZ wymiaru query) — pelne kliki/impresje.
 

@@ -189,6 +189,11 @@ DANE:
 
 ### GSC — top 10 stron landing (7 dni)
 {gsc_pages_7d}
+
+### SEO — okazje: strony z widocznością ale ~0 klików (28 dni)
+{seo_opportunities}
+
+WSKAZÓWKA do sekcji SEO (operacjonalizacja content-refresh): to strony które JUŻ rankują, ale nie dowożą klików. Jeśli w kolumnie „flaga" jest „ZLY JEZYK" (polska fraza serwowana pod /en//de//ua/) — to priorytetowa anomalia: mamy pozycję organic, ale tracimy niemal 100% klików przez zły język serwowanej strony. Rekomenduj wzmocnienie POLSKIEJ wersji strony (rozbudowa treści pod te zapytania + linkowanie wewnętrzne) — NIE ruszaj hreflang/canonical (są poprawne). Pozostałe wiersze = kandydaci do content-refresh: rozbuduj treść pod „top_zapytanie" i pokrewne frazy z GSC. Priorytetyzuj po liczbie impresji.
 """
 
 
