@@ -130,19 +130,21 @@ def build_trends_section(geo: str = "PL") -> str:
     head = (
         "## 📈 Trendy na dzisiaj (kreatywny marketing)\n\n"
         "Trendy z Google Trends (PL) z potencjałem do szybkiej reakcji reklamowej pod SMS API SENDLY. "
-        "Ocena i kreacje wygenerowane automatycznie — zweryfikuj przed publikacją.\n\n"
+        "Ocena i kreacje wygenerowane automatycznie – zweryfikuj przed publikacją.\n\n"
     )
     if not items:
-        return head + "_Dziś brak trendów z sensownym, nienaciąganym powiązaniem z SENDLY._\n"
-
-    rows = ["| Trend | Jak podpiąć pod SENDLY | Na blog? | Sugerowany tekst reklamy |",
-            "|---|---|---|---|"]
-    for it in items:
-        rows.append(
-            f"| {_cell(it.get('trend'))} | {_cell(it.get('angle'))} | "
-            f"{_cell(it.get('blog'))} | {_cell(it.get('ad_copy'))} |"
-        )
-    return head + "\n".join(rows) + "\n"
+        result = head + "_Dziś brak trendów z sensownym, nienaciąganym powiązaniem z SENDLY._\n"
+    else:
+        rows = ["| Trend | Jak podpiąć pod SENDLY | Na blog? | Sugerowany tekst reklamy |",
+                "|---|---|---|---|"]
+        for it in items:
+            rows.append(
+                f"| {_cell(it.get('trend'))} | {_cell(it.get('angle'))} | "
+                f"{_cell(it.get('blog'))} | {_cell(it.get('ad_copy'))} |"
+            )
+        result = head + "\n".join(rows) + "\n"
+    # Reguła Toma: w sekcji trendów wszędzie półpauzy (–), nigdy pauzy (—); LLM lubi wstawiać pauzy.
+    return result.replace("—", "–")
 
 
 if __name__ == "__main__":
