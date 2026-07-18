@@ -415,6 +415,15 @@ def generate_report() -> dict:
         report_md = report_md.rstrip() + "\n\n" + geo_report.build_report(as_section=True)
     except Exception as e:
         print(f"geo_report append error: {type(e).__name__}: {e}")
+    # Sekcja Trendy na dzisiaj (kreatywny marketing) — do OBU raportow (CMO Tom + CEO Hubert).
+    trends_md = ""
+    try:
+        import trends
+        trends_md = trends.build_trends_section()
+        if trends_md:
+            report_md = report_md.rstrip() + "\n\n" + trends_md
+    except Exception as e:
+        print(f"trends append error: {type(e).__name__}: {e}")
     vault_path = save_report(data["date"], report_md, sync_status)
     if os.environ.get("MD_REPORTS_DIR"):
         base = os.environ.get("CHAINLIT_BASE_URL", "").rstrip("/")
@@ -451,6 +460,7 @@ def generate_report() -> dict:
         sync_status=sync_status,
         alerts=triggered_alerts,
         obsidian_url=report_url,
+        trends_md=trends_md,
     )
     return {
         "date": data["date"],

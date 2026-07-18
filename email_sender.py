@@ -130,8 +130,11 @@ def _send_via_gmail(to_list: list[str], subject: str, html: str, plain: str) -> 
 
 
 def send_report_email(date_iso: str, report_md: str, sync_status: dict,
-                       alerts: list, obsidian_url: str) -> dict:
-    """Wysyła raport do dwóch grup. CEO dostaje wersję bez Rekomendacji."""
+                       alerts: list, obsidian_url: str, trends_md: str = "") -> dict:
+    """Wysyła raport do dwóch grup. CEO dostaje wersję bez Rekomendacji.
+
+    trends_md (sekcja 'Trendy na dzisiaj') jest już doklejone do report_md dla CMO;
+    do raportu CEO doklejamy je osobno przez panel_positive_report.generate(extra_md=...)."""
     cmo = _parse_recipients(os.environ.get("REPORT_RECIPIENTS_CMO", ""))
     ceo = _parse_recipients(os.environ.get("REPORT_RECIPIENTS_CEO", ""))
 
@@ -153,7 +156,7 @@ def send_report_email(date_iso: str, report_md: str, sync_status: dict,
     if ceo:
         try:
             import panel_positive_report
-            pkg = panel_positive_report.generate(today_iso=date_iso)
+            pkg = panel_positive_report.generate(today_iso=date_iso, extra_md=trends_md)
             _send_via_gmail(ceo, pkg["subject"], pkg["html"], pkg["plain"])
             result["ceo"]["sent_to"] = ceo
         except Exception as e:

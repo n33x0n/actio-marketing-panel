@@ -402,13 +402,17 @@ hr {{ border: 0; border-top: 1px solid #ddd; margin: 24px 0; }}
 </body></html>"""
 
 
-def generate(today_iso: str | None = None) -> dict:
-    """Public entry – zwraca {subject, plain, html} dla danego dnia."""
+def generate(today_iso: str | None = None, extra_md: str = "") -> dict:
+    """Public entry – zwraca {subject, plain, html} dla danego dnia.
+
+    extra_md: opcjonalna sekcja (np. 'Trendy na dzisiaj') doklejana na koniec raportu CEO."""
     global TODAY, PERIOD_A_START, PERIOD_A_END, PERIOD_B_START, PERIOD_B_END
     if today_iso:
         TODAY = datetime.strptime(today_iso, "%Y-%m-%d").date()
     PERIOD_A_START, PERIOD_A_END, PERIOD_B_START, PERIOD_B_END = _compute_periods(TODAY)
     md = render_md()
+    if extra_md:
+        md = md.rstrip() + "\n\n" + extra_md
     inner_html = md_lib.markdown(md, extensions=["extra", "tables", "fenced_code"])
     html = _wrap_html(inner_html)
     subject = f"[{get_brand().name} Marketing Report] 📈 – {TODAY.strftime('%Y-%m-%d')}"
