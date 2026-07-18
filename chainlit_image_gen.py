@@ -81,8 +81,11 @@ def _build_prompt(topic: str, fmt: dict) -> str:
         f"- The text must be clearly readable, professional, no typos\n\n"
         f"Technical:\n"
         f"- Aspect ratio: {fmt['aspect']} (target {fmt['width']}x{fmt['height']}px)\n"
-        f"- Leave clear space in the bottom-right corner (the Actio logo will be placed there in post-processing)\n\n"
+        f"- Keep the bottom-right corner free of faces, text and key subjects (a small logo will be "
+        f"composited there in post-processing), but the photo MUST continue naturally into that corner - "
+        f"do NOT paint any box, white plate, placeholder, empty panel or frame there\n\n"
         f"AVOID:\n"
+        f"- White boxes, blank plates, placeholder rectangles or empty panels anywhere in the image\n"
         f"- Cartoon, illustration, 3D render, anime, watercolor styles\n"
         f"- Any visible brand logos, watermarks, or company names other than what's specified\n"
         f"- Stock-photo-look cheesy compositions, fake handshakes, exaggerated expressions\n"
@@ -148,11 +151,15 @@ def _add_logo_overlay(image_bytes: bytes, target_w: int, target_h: int) -> bytes
     pos_x = target_w - logo_target_w - padding
     pos_y = target_h - logo_target_h - padding
 
-    # Semi-transparent rounded-rectangle background pod logo (czytelność)
+    # Semi-transparent rounded-rectangle background pod logo (czytelność).
+    # Wymiar ZAWSZE = logo + bg_padding (~10px) - wieksze biale pola na starych grafikach
+    # malowal model przez stary prompt "leave clear space" (usuniete 18.07).
+    from PIL import ImageDraw
     bg_padding = int(padding * 0.4)
-    bg = Image.new("RGBA",
-                   (logo_target_w + 2 * bg_padding, logo_target_h + 2 * bg_padding),
-                   (255, 255, 255, 215))
+    bg_w, bg_h = logo_target_w + 2 * bg_padding, logo_target_h + 2 * bg_padding
+    bg = Image.new("RGBA", (bg_w, bg_h), (0, 0, 0, 0))
+    _d = ImageDraw.Draw(bg)
+    _d.rounded_rectangle([0, 0, bg_w - 1, bg_h - 1], radius=max(8, bg_padding), fill=(255, 255, 255, 215))
     base.paste(bg, (pos_x - bg_padding, pos_y - bg_padding), bg)
     base.paste(logo_resized, (pos_x, pos_y), logo_resized)
 
