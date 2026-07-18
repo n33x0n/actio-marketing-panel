@@ -156,7 +156,9 @@ def send_report_email(date_iso: str, report_md: str, sync_status: dict,
     if ceo:
         try:
             import panel_positive_report
-            pkg = panel_positive_report.generate(today_iso=date_iso, extra_md=trends_md)
+            # Trendy do CEO (Hubert) tylko gdy TRENDS_CEO=1 — domyslnie OFF; wlaczyc po akceptacji Toma.
+            ceo_trends = trends_md if os.environ.get("TRENDS_CEO", "").strip().lower() in ("1", "true", "yes", "on") else ""
+            pkg = panel_positive_report.generate(today_iso=date_iso, extra_md=ceo_trends)
             _send_via_gmail(ceo, pkg["subject"], pkg["html"], pkg["plain"])
             result["ceo"]["sent_to"] = ceo
         except Exception as e:
