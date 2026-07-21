@@ -197,6 +197,76 @@ WSKAZÓWKA do sekcji SEO (operacjonalizacja content-refresh): to strony które J
 """
 
 
+# --- prompt sekcji "Trendy na dzisiaj": profil "actio" (newsjacking B2B telco) ---
+ACTIO_TRENDS_PROMPT = """Jestes strategiem marketingu B2B (newsjacking / real-time marketing) dla ACTIO - polskiego operatora telekomunikacyjnego dla firm (marka spolki SYNTELL S.A., wpis w rejestrze UKE, wlasna infrastruktura w Polsce).
+
+OFERTA ACTIO - do tego szukasz powiazan; w KAZDEJ pozycji wskaz konkretna usluge z tej listy:
+- SIP Trunk - podlaczenie dowolnej centrali (3CX, Asterisk, FreePBX, Microsoft Teams) do sieci publicznej; JEDYNY w Polsce z dwukierunkowym SMS na firmowym numerze
+- Wirtualna centrala w chmurze - IVR, kolejkowanie polaczen, przekierowania wg godzin pracy, nagrywanie rozmow, statystyki; od 49 zl/mc, bez sprzetu
+- 3CX Phone System - wdrozenia i licencje, partner 3CX od 2009
+- Wirtualny numer komorkowy +48 - firmowy numer bez karty SIM, z obsluga SMS, dzialajacy na komputerze, telefonie i w aplikacji
+- Numery stacjonarne, infolinie 800/801, przenoszenie numerow (MNP) bez przerwy w dzialaniu
+- AI voicebot - asystent glosowy odbierajacy polaczenia 24/7
+- SMS API (Sendly) - masowa i transakcyjna wysylka SMS z systemow firmowych
+
+KLIENCI ACTIO: firmy B2B - e-commerce i logistyka, przychodnie i gabinety, kancelarie, biura rachunkowe, contact center, agencje, firmy z praca zdalna i handlowcami w terenie.
+
+Dostajesz liste dzisiejszych trendow wyszukiwan w Polsce (Google Trends) z kontekstem newsowym. Zadanie: znalezc te, ktore da sie WIARYGODNIE polaczyc z konkretna usluga ACTIO - tak, zeby szybka reakcja (wpis na blogu, post w social media, reklama) przyciagnela uwage firm i ruch na actio.pl.
+
+Typowe mosty dla telekomunikacji B2B (czego szukac):
+- awarie sieci i operatorow, przerwy w uslugach -> niezawodnosc, SLA 99,9%, wlasna infrastruktura
+- zmiany technologiczne i regulacyjne (wygaszanie 3G/2G, decyzje UKE, prawo komunikacji elektronicznej, RODO, zgody na SMS)
+- praca zdalna i hybrydowa, powroty do biur, rynek pracy -> centrala w chmurze, numer nalezacy do firmy a nie do pracownika
+- szczyty ruchu w firmach (Black Friday, sezony sprzedazowe, dlugie weekendy, wydarzenia masowe) -> kolejkowanie, IVR, oddzwanianie, przekierowania
+- oszustwa telefoniczne, spoofing, bezpieczenstwo komunikacji -> firmowy numer zamiast prywatnego, kontrola nad historia rozmow
+- AI w obsludze klienta -> AI voicebot
+- wydarzenia branzowe klientow (e-commerce, medycyna, logistyka) -> konkretne zastosowanie u nich
+
+Zasady:
+- Zostaw TYLKO trendy z realnym, nienaciaganym mostem do konkretnej uslugi ACTIO. Lepiej mniej, ale trafnych. Moze byc 0, jesli dzis nic nie pasuje.
+- Odrzuc tematy drazliwe (tragedie, smierc, polityka, konflikty) - tam newsjacking szkodzi marce B2B.
+- Odrzuc trendy czysto konsumenckie i rozrywkowe bez przelozenia na firmy (celebryci, sport, seriale), chyba ze masz mocny biznesowy most (np. wielki mecz = szczyt zamowien w gastronomii = przeciazona infolinia).
+- Maksymalnie 6 pozycji.
+- Nazwe marki pisz ZAWSZE wielkimi literami: ACTIO. Uzywaj polpauzy, nigdy pauzy.
+
+Dla kazdego zostawionego trendu podaj:
+- "trend": nazwa trendu
+- "service": ktora usluga ACTIO z listy wyzej (krotko, np. "Wirtualna centrala" albo "SIP Trunk + SMS")
+- "angle": na czym polega most miedzy trendem a ta usluga (1 zdanie, konkretnie, bez lania wody)
+- "format": najlepszy format reakcji - "wpis na blogu", "post social", "reklama" lub "newsletter" + 2-4 slowa doprecyzowania
+- "copy": gotowa propozycja tresci PO POLSKU (1-2 zdania), nawiazujaca do trendu i konczaca sie naturalnym mostem do ACTIO
+
+Zwroc WYLACZNIE poprawny JSON, bez komentarza:
+{{"items":[{{"trend":"...","service":"...","angle":"...","format":"...","copy":"..."}}]}}
+
+Dzisiejsze trendy (PL):
+{trends}
+"""
+
+# --- prompt sekcji "Trendy na dzisiaj": profil "sendly" (przeniesiony 1:1 z trends.py, zero regresji) ---
+SENDLY_TRENDS_PROMPT = """Jesteś strategiem kreatywnego marketingu (newsjacking / real-time marketing) dla SENDLY — SMS API polskiego operatora telekomunikacyjnego (marka spółki Syntell S.A. / ACTIO). Produkt: wysyłka SMS przez REST API, pay-as-you-go, bez pośredników, 100 SMS gratis na start; typowe zastosowania: powiadomienia transakcyjne, kody 2FA/OTP, SMS marketing i masowa wysyłka dla firm oraz e-commerce.
+
+Dostajesz listę dzisiejszych trendów wyszukiwań w Polsce (Google Trends) z kontekstem newsowym. Zadanie: znaleźć te trendy, które da się KREATYWNIE i WIARYGODNIE podpiąć pod markę/usługę SENDLY, tak żeby szybka reakcja reklamowa albo wpis na blogu przyciągnął ruch na sendly.link.
+
+Zasady:
+- Zostaw TYLKO trendy z realnym, nienaciąganym powiązaniem z SMS API / powiadomieniami / 2FA / e-commerce / komunikacją z klientem. Lepiej mniej, ale trafnych.
+- Odrzucaj naciągane skojarzenia i tematy drażliwe (tragedie, polityka, śmierć) — tam newsjacking szkodzi marce.
+- Maksymalnie 10 pozycji. Może być mniej. Może być 0, jeśli nic dziś nie pasuje.
+
+Dla każdego zostawionego trendu podaj:
+- "trend": nazwa trendu
+- "angle": jak wiarygodnie podpiąć go pod SMS API SENDLY (1 zdanie)
+- "blog": czy warto zrobić z tego wpis na blogu, czy to raczej krótka reklama (krótko, np. "tak — poradnik ..." albo "raczej reklama")
+- "ad_copy": gotowy, kreatywny tekst reklamy PO POLSKU (1-2 zdania), nawiązujący do trendu i kończący się subtelnym hakiem do SENDLY
+
+Zwróć WYŁĄCZNIE poprawny JSON, bez komentarza, w formacie:
+{{"items":[{{"trend":"...","angle":"...","blog":"...","ad_copy":"..."}}]}}
+
+Dzisiejsze trendy (PL):
+{trends}
+"""
+
+
 @dataclass(frozen=True)
 class BrandProfile:
     # tozsamosc
@@ -254,12 +324,31 @@ class BrandProfile:
     geo_target: str           # klucz marki docelowej w geo_brands
     geo_system_prompt: str
 
+    # --- sekcja "Trendy na dzisiaj" (newsjacking) ---
+    trends_prompt: str = ""
+    trends_fields: tuple[tuple[str, str], ...] = ()
+    trends_intro: str = ""
+    trends_empty: str = ""
+
 
 ACTIO = BrandProfile(
     id="actio",
     name="Actio",
     report_slug="actio-marketing",
     report_prompt=ACTIO_REPORT_PROMPT,
+    trends_prompt=ACTIO_TRENDS_PROMPT,
+    trends_fields=(
+        ("trend", "Trend"),
+        ("service", "Usługa ACTIO"),
+        ("angle", "Jak podpiąć"),
+        ("format", "Format"),
+        ("copy", "Propozycja treści"),
+    ),
+    trends_intro=(
+        "Dzisiejsze trendy wyszukiwań w Polsce, w których AI znalazło realne powiązanie z konkretną usługą "
+        "ACTIO – do szybkiej reakcji treściowej lub reklamowej. Wygenerowane automatycznie, zweryfikuj przed publikacją."
+    ),
+    trends_empty="_Dziś żaden trend nie ma sensownego, nienaciąganego powiązania z ofertą ACTIO._",
     openrouter_referer="https://actio.pl",
     openrouter_title="Actio Marketing CMO-layer",
     context_file="cmo_context.md",
@@ -326,6 +415,18 @@ SENDLY = BrandProfile(
     name="Sendly",
     report_slug="sendly-marketing",
     report_prompt=SENDLY_REPORT_PROMPT,
+    trends_prompt=SENDLY_TRENDS_PROMPT,
+    trends_fields=(
+        ("trend", "Trend"),
+        ("angle", "Jak podpiąć pod SENDLY"),
+        ("blog", "Na blog?"),
+        ("ad_copy", "Sugerowany tekst reklamy"),
+    ),
+    trends_intro=(
+        "Trendy z Google Trends (PL) z potencjałem do szybkiej reakcji reklamowej pod SMS API SENDLY. "
+        "Ocena i kreacje wygenerowane automatycznie – zweryfikuj przed publikacją."
+    ),
+    trends_empty="_Dziś brak trendów z sensownym, nienaciąganym powiązaniem z SENDLY._",
     openrouter_referer="https://sendly.link",
     openrouter_title="Sendly Marketing CMO-layer",
     context_file="context_sendly.md",

@@ -1,8 +1,12 @@
-"""Sekcja 'Trendy na dzisiaj' — kreatywny marketing (newsjacking) dla SENDLY.
+"""Sekcja 'Trendy na dzisiaj' — kreatywny marketing (newsjacking), per marka.
 
 Pipeline: pobierz dzisiejsze trendy wyszukiwań (Google Trends RSS, PL) -> LLM ocenia,
-które da się wiarygodnie podpiąć pod SMS API SENDLY i mają potencjał na ruch/wpis na
-sendly.link, i proponuje kreatywny tekst reklamy -> tabela markdown do raportu.
+które da się wiarygodnie podpiąć pod ofertę marki, i proponuje gotową treść
+-> tabela markdown do raportu.
+
+Prompt, kolumny tabeli i teksty sekcji pochodzą z profilu marki (brand_config:
+trends_prompt / trends_fields / trends_intro / trends_empty), więc ACTIO i SENDLY
+mają własne, dopasowane wersje na wspólnym kodzie.
 
 Wszystko fail-open: dowolny błąd (sieć, LLM, parsowanie) -> pusty string, raport idzie dalej.
 Sekcja trafia do OBU raportów (CMO Tom + CEO Hubert).
@@ -22,7 +26,7 @@ HT_NS = "https://trends.google.com/trending/rss"
 def fetch_trends(geo: str = "PL", limit: int = 20) -> list[dict]:
     """Pobiera trendujące wyszukiwania z Google Trends RSS. Zwraca [{trend, traffic, news[]}]."""
     url = f"https://trends.google.com/trending/rss?geo={geo}"
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (SENDLY report bot)"})
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (marketing report bot)"})
     with urllib.request.urlopen(req, timeout=20) as r:
         raw = r.read().decode("utf-8", errors="replace")
     root = ET.fromstring(raw)
@@ -44,31 +48,8 @@ def fetch_trends(geo: str = "PL", limit: int = 20) -> list[dict]:
     return out
 
 
-ASSESS_PROMPT = """Jesteś strategiem kreatywnego marketingu (newsjacking / real-time marketing) dla SENDLY — SMS API polskiego operatora telekomunikacyjnego (marka spółki Syntell S.A. / ACTIO). Produkt: wysyłka SMS przez REST API, pay-as-you-go, bez pośredników, 100 SMS gratis na start; typowe zastosowania: powiadomienia transakcyjne, kody 2FA/OTP, SMS marketing i masowa wysyłka dla firm oraz e-commerce.
-
-Dostajesz listę dzisiejszych trendów wyszukiwań w Polsce (Google Trends) z kontekstem newsowym. Zadanie: znaleźć te trendy, które da się KREATYWNIE i WIARYGODNIE podpiąć pod markę/usługę SENDLY, tak żeby szybka reakcja reklamowa albo wpis na blogu przyciągnął ruch na sendly.link.
-
-Zasady:
-- Zostaw TYLKO trendy z realnym, nienaciąganym powiązaniem z SMS API / powiadomieniami / 2FA / e-commerce / komunikacją z klientem. Lepiej mniej, ale trafnych.
-- Odrzucaj naciągane skojarzenia i tematy drażliwe (tragedie, polityka, śmierć) — tam newsjacking szkodzi marce.
-- Maksymalnie 10 pozycji. Może być mniej. Może być 0, jeśli nic dziś nie pasuje.
-
-Dla każdego zostawionego trendu podaj:
-- "trend": nazwa trendu
-- "angle": jak wiarygodnie podpiąć go pod SMS API SENDLY (1 zdanie)
-- "blog": czy warto zrobić z tego wpis na blogu, czy to raczej krótka reklama (krótko, np. "tak — poradnik ..." albo "raczej reklama")
-- "ad_copy": gotowy, kreatywny tekst reklamy PO POLSKU (1-2 zdania), nawiązujący do trendu i kończący się subtelnym hakiem do SENDLY
-
-Zwróć WYŁĄCZNIE poprawny JSON, bez komentarza, w formacie:
-{{"items":[{{"trend":"...","angle":"...","blog":"...","ad_copy":"..."}}]}}
-
-Dzisiejsze trendy (PL):
-{trends}
-"""
-
-
 def _assess_llm(trends_json: str) -> list[dict]:
-    """Woła OpenRouter (Fable 5 + fallback Opus) i zwraca listę ocenionych trendów."""
+    """Woła OpenRouter (Fable 5 + fallback Opus) z promptem PROFILU MARKI. Zwraca oceny."""
     from langfuse.openai import openai
     import os
 
@@ -79,7 +60,7 @@ def _assess_llm(trends_json: str) -> list[dict]:
         default_headers={"HTTP-Referer": brand.openrouter_referer, "X-Title": brand.openrouter_title},
         timeout=120.0,
     )
-    prompt = ASSESS_PROMPT.format(trends=trends_json)
+    prompt = brand.trends_prompt.format(trends=trends_json)
 
     def _call(model: str) -> str | None:
         resp = client.chat.completions.create(
@@ -116,7 +97,10 @@ def _cell(text: str) -> str:
 
 
 def build_trends_section(geo: str = "PL") -> str:
-    """Zwraca sekcję markdown 'Trendy na dzisiaj' albo pusty string (fail-open)."""
+    """Zwraca sekcję markdown 'Trendy na dzisiaj' dla AKTYWNEJ MARKI albo "" (fail-open)."""
+    brand = get_brand()
+    if not brand.trends_prompt:
+        return ""
     try:
         raw = fetch_trends(geo=geo, limit=20)
         if not raw:
@@ -127,21 +111,16 @@ def build_trends_section(geo: str = "PL") -> str:
         print(f"[trends] build error: {type(e).__name__}: {e}")
         return ""
 
-    head = (
-        "## 📈 Trendy na dzisiaj (kreatywny marketing)\n\n"
-        "Trendy z Google Trends (PL) z potencjałem do szybkiej reakcji reklamowej pod SMS API SENDLY. "
-        "Ocena i kreacje wygenerowane automatycznie – zweryfikuj przed publikacją.\n\n"
-    )
+    head = f"## 📈 Trendy na dzisiaj (kreatywny marketing)\n\n{brand.trends_intro}\n\n"
     if not items:
-        result = head + "_Dziś brak trendów z sensownym, nienaciąganym powiązaniem z SENDLY._\n"
+        result = head + brand.trends_empty + "\n"
     else:
-        rows = ["| Trend | Jak podpiąć pod SENDLY | Na blog? | Sugerowany tekst reklamy |",
-                "|---|---|---|---|"]
+        keys = [k for k, _ in brand.trends_fields]
+        headers = [h for _, h in brand.trends_fields]
+        rows = ["| " + " | ".join(headers) + " |",
+                "|" + "---|" * len(headers)]
         for it in items:
-            rows.append(
-                f"| {_cell(it.get('trend'))} | {_cell(it.get('angle'))} | "
-                f"{_cell(it.get('blog'))} | {_cell(it.get('ad_copy'))} |"
-            )
+            rows.append("| " + " | ".join(_cell(it.get(k)) for k in keys) + " |")
         result = head + "\n".join(rows) + "\n"
     # Reguła Toma: w sekcji trendów wszędzie półpauzy (–), nigdy pauzy (—); LLM lubi wstawiać pauzy.
     return result.replace("—", "–")
