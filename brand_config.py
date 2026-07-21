@@ -226,7 +226,7 @@ Zasady:
 - Zostaw TYLKO trendy z realnym, nienaciaganym mostem do konkretnej uslugi ACTIO. Lepiej mniej, ale trafnych. Moze byc 0, jesli dzis nic nie pasuje.
 - Odrzuc tematy drazliwe (tragedie, smierc, polityka, konflikty) - tam newsjacking szkodzi marce B2B.
 - Odrzuc trendy czysto konsumenckie i rozrywkowe bez przelozenia na firmy (celebryci, sport, seriale), chyba ze masz mocny biznesowy most (np. wielki mecz = szczyt zamowien w gastronomii = przeciazona infolinia).
-- Maksymalnie 6 pozycji.
+- Maksymalnie 10 pozycji, ale liczba ma WYNIKAC z tego, ile trendow naprawde spelnia kryterium: moze byc 0, 2, 5 albo 10. Nie dobieraj na sile do zadnej liczby i nie dorzucaj slabszych pozycji, zeby bylo ich wiecej. Kazda pozycja musi bronic sie sama.
 - Nazwe marki pisz ZAWSZE wielkimi literami: ACTIO. Uzywaj polpauzy, nigdy pauzy.
 
 Dla kazdego zostawionego trendu podaj:
@@ -345,8 +345,8 @@ ACTIO = BrandProfile(
         ("copy", "Propozycja treści"),
     ),
     trends_intro=(
-        "Dzisiejsze trendy wyszukiwań w Polsce, w których AI znalazło realne powiązanie z konkretną usługą "
-        "ACTIO – do szybkiej reakcji treściowej lub reklamowej. Wygenerowane automatycznie, zweryfikuj przed publikacją."
+        "Trendy wyszukiwań w Polsce (Google Trends) z realnym powiązaniem z konkretną usługą ACTIO. "
+        "Propozycje do weryfikacji przed publikacją."
     ),
     trends_empty="_Dziś żaden trend nie ma sensownego, nienaciąganego powiązania z ofertą ACTIO._",
     openrouter_referer="https://actio.pl",
