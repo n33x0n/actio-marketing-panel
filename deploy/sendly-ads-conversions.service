@@ -1,0 +1,16 @@
+[Unit]
+Description=Sendly — import konwersji offline (gclid) do Google Ads
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/opt/sendly-marketing-panel
+# .env musi miec CZYSTE linie KEY=value (bez inline-komentarzy — systemd wciela je do wartosci)
+EnvironmentFile=/opt/sendly-marketing-panel/.env
+Environment=BRAND=sendly
+ExecStart=/opt/sendly-marketing-panel/.venv/bin/python ads_click_conversions.py
+StandardOutput=append:/opt/sendly-marketing-panel/logs/ads-conversions.log
+StandardError=append:/opt/sendly-marketing-panel/logs/ads-conversions.err.log
+TimeoutStartSec=10m

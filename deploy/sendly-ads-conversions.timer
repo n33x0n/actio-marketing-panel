@@ -1,0 +1,11 @@
+[Unit]
+Description=Sendly — codzienny import konwersji gclid do Google Ads (07:05)
+
+[Timer]
+# 07:05 — przed raportem dziennym (07:15), zeby swieze konwersje byly juz w Ads.
+# Rekordy mlodsze niz 6h i tak czekaja na nastepny przebieg (zalecenie Google).
+OnCalendar=*-*-* 07:05 Europe/Warsaw
+Persistent=true
+
+[Install]
+WantedBy=timers.target
