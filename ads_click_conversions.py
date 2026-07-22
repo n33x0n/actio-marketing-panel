@@ -168,6 +168,7 @@ def upload(pending: list[tuple[str, dict]], validate_only: bool = False) -> bool
             "destinationReferences": ["conv"],
             # suffix klucza KV = stabilny id -> retry nie dubluje konwersji
             "transactionId": key.rsplit(":", 1)[-1],
+            "eventSource": "WEB",  # wymagane; konwersja z kliku webowego
             "eventTimestamp": at.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
             "consent": {"adUserData": consent, "adPersonalization": consent},
             "adIdentifiers": {},
