@@ -7,6 +7,7 @@ import os
 import pathlib
 from pathlib import Path
 import mimetypes
+import unicodedata
 
 import httpx
 import markdown as md_lib
@@ -92,13 +93,16 @@ def upload_media(image_path: str, alt_text: str | None = None) -> dict:
     mime = mimetypes.guess_type(str(p))[0] or "image/png"
     with open(p, "rb") as f:
         data = f.read()
+    # Naglowek HTTP musi byc ASCII — nazwe pliku z polskimi znakami (np. "wyróznia.png")
+    # transliterujemy, inaczej httpx rzuca UnicodeEncodeError na Content-Disposition.
+    safe_name = unicodedata.normalize("NFKD", p.name).encode("ascii", "ignore").decode() or "image.png"
     r = httpx.post(
         f"{_base()}/wp-json/wp/v2/media",
         content=data,
         headers={
             **_auth(),
             "Content-Type": mime,
-            "Content-Disposition": f'attachment; filename="{p.name}"',
+            "Content-Disposition": f'attachment; filename="{safe_name}"',
         },
         timeout=60.0,
     )

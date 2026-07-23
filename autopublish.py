@@ -473,7 +473,10 @@ def generate_draft() -> dict:
     prompt = _build_prompt(pick["keyword"], pick["position"], pick["impressions"], cats)
     raw = _call_llm(prompt)
     parsed = _parse_llm_output(raw)
-    parsed["slug"] = parsed.get("slug") or slugify(parsed["title"])[:80]
+    # ZAWSZE slugify (nie tylko gdy pusty): LLM potrafi zwrocic slug z polskimi znakami
+    # (np. "...wyróznia"), a te trafiaja do nazwy pliku obrazka -> naglowek Content-Disposition
+    # w upload_media -> UnicodeEncodeError 'ascii'. slugify transliteruje o->o, z->z itd.
+    parsed["slug"] = slugify(parsed.get("slug") or parsed["title"])[:80]
     print(f"LLM ok: title='{parsed['title'][:60]}...', content {len(parsed['content_md'])} chars")
 
     print("=== Generating image (Nano Banana) ===")
@@ -535,7 +538,10 @@ def regenerate_with_edits(parent_draft_id: int, edit_notes: str) -> dict:
     prompt = _build_prompt(parent["keyword"], parent["gsc_position"] or 20, parent["gsc_impressions"] or 100, cats, edit_notes=edit_notes)
     raw = _call_llm(prompt)
     parsed = _parse_llm_output(raw)
-    parsed["slug"] = parsed.get("slug") or slugify(parsed["title"])[:80]
+    # ZAWSZE slugify (nie tylko gdy pusty): LLM potrafi zwrocic slug z polskimi znakami
+    # (np. "...wyróznia"), a te trafiaja do nazwy pliku obrazka -> naglowek Content-Disposition
+    # w upload_media -> UnicodeEncodeError 'ascii'. slugify transliteruje o->o, z->z itd.
+    parsed["slug"] = slugify(parsed.get("slug") or parsed["title"])[:80]
 
     # Reuse parent image (nie regeneruj — oszczędność kosztu)
     img_path = parent["image_path"]
