@@ -317,6 +317,21 @@ def _extract_faq_from_md(content_md: str) -> list[dict]:
     return pairs
 
 
+def _normalize_dashes(obj):
+    """Reguła strony ACTIO: nigdy pauzy (—/―), zawsze półpauzy (–).
+
+    LLM wstawia pauzy w treści; zamieniamy je rekurencyjnie we WSZYSTKICH polach
+    tekstowych (title, content_md, meta_description, FAQ) zanim draft trafi do bazy.
+    """
+    if isinstance(obj, str):
+        return obj.replace("—", "–").replace("―", "–")
+    if isinstance(obj, list):
+        return [_normalize_dashes(x) for x in obj]
+    if isinstance(obj, dict):
+        return {k: _normalize_dashes(v) for k, v in obj.items()}
+    return obj
+
+
 def _parse_llm_output(raw: str) -> dict:
     """Wyciągnij JSON z odpowiedzi LLM (czasem opakowany w ```json...```)."""
     raw = raw.strip()
@@ -330,7 +345,7 @@ def _parse_llm_output(raw: str) -> dict:
         if s == -1 or e == -1:
             raise ValueError(f"No JSON found in LLM output: {raw[:300]}")
         raw = raw[s:e + 1]
-    return json.loads(raw)
+    return _normalize_dashes(json.loads(raw))
 
 
 # === EMAIL ===
